@@ -11,13 +11,27 @@
     <style>
         :root { --primary: #00ff88; --bg: #0a0a0a; --card: #161616; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; }
-        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        /* Overlay de Login/Permissão */
+        #login-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: var(--bg); z-index: 9999; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; text-align: center;
+        }
+
         .container { width: 95%; max-width: 800px; padding: 20px; display: none; }
         .card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid #333; text-align: center; margin-bottom: 20px; }
-        google-cast-launcher { display: inline-block; width: 60px; height: 60px; cursor: pointer; background: rgba(0, 255, 136, 0.15); border-radius: 50%; padding: 10px; --connected-color: var(--primary); }
+        
+        google-cast-launcher {
+            display: inline-block; width: 60px; height: 60px; cursor: pointer;
+            background: rgba(0, 255, 136, 0.15); border-radius: 50%; padding: 10px;
+            --connected-color: var(--primary);
+        }
+
         #videoPlayer { width: 100%; border-radius: 10px; background: #000; margin-top: 15px; border: 2px solid #333; display: none; }
         input { width: 85%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; background: #222; color: white; font-size: 16px; }
         .btn-play { background: var(--primary); color: black; border: none; padding: 15px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 90%; }
+        
         .channel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; margin-top: 20px; width: 100%; }
         .channel-item { background: var(--card); padding: 15px; border-radius: 12px; cursor: pointer; text-align: center; border: 1px solid #222; }
         .channel-item img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 10px; border-radius: 10px; }
@@ -27,16 +41,19 @@
 
     <div id="login-overlay">
         <h1 style="color: var(--primary);">Apitv screen</h1>
-        <p>Aguarde, configurando permissões...</p>
+        <p style="padding: 20px;">Para funcionar na TV, autorize as permissões de Rede e Localização a seguir.</p>
         <input type="text" id="userNameInput" placeholder="Seu Nome">
-        <button class="btn-play" onclick="realizarLogin()" style="width: 200px; margin-top: 10px;">ENTRAR</button>
+        <button class="btn-play" onclick="realizarLogin()" style="width: 220px; margin-top: 10px;">AUTORIZAR E ENTRAR</button>
     </div>
 
     <div class="container" id="main-content">
         <div class="card">
             <h2 style="color: var(--primary); margin: 0;">Apitv screen</h2>
             <google-cast-launcher></google-cast-launcher>
+            <div id="status-msg" style="color:var(--primary); font-weight:bold; margin-top:5px;">SISTEMA PRONTO</div>
+            
             <video id="videoPlayer" controls playsinline></video>
+
             <div id="setup-form">
                 <input type="text" id="listUrl" placeholder="URL M3U8">
                 <button class="btn-play" onclick="saveAndLoad()">CARREGAR LISTA</button>
@@ -49,14 +66,15 @@
     </div>
 
     <script>
-        // --- MOTOR DE PERMISSÕES PARA APLICATIVO (MEDIAN.CO) ---
-        function solicitarPermissoesApp() {
-            // Comando para o Median solicitar localização (necessário para Bluetooth/Cast)
-            window.location.href = "median://permissions/request?permissions=location,storage,notification";
+        // --- ATIVAÇÃO DE PERMISSÕES NATIVAS (MEDIAN.CO) ---
+        function ativarPermissoesNativas() {
+            // Este comando força o App a pedir Localização e Rede Local (essencial para o Cast)
+            window.location.href = "median://permissions/request?permissions=location,notification,localNetwork";
             
-            // Força o reconhecimento do Cast no WebView
-            window.chrome = window.chrome || {};
-            window.chrome.cast = window.chrome.cast || {};
+            // Registra para o Android que este app possui capacidade de mídia
+            if (window.median) {
+                window.median.media.requestAudioFocus();
+            }
         }
 
         const DB_URL = "https://netbase-cloud-default-rtdb.firebaseio.com/listas.json";
@@ -64,7 +82,7 @@
         const video = document.getElementById('videoPlayer');
         let currentUrl = "", currentTitle = "", currentListId = null;
 
-        // INICIALIZAÇÃO CAST
+        // MOTOR GOOGLE CAST
         window.__onGCastApiAvailable = function(isAvailable) {
             if (isAvailable) {
                 const context = cast.framework.CastContext.getInstance();
@@ -82,16 +100,19 @@
                 const mediaInfo = new chrome.cast.media.MediaInfo(url, 'application/x-mpegurl');
                 const metadata = new chrome.cast.media.GenericMediaMetadata();
                 metadata.title = title;
+                metadata.subtitle = "Apitv screen - Transmitindo";
+                mediaInfo.metadata = metadata;
                 session.loadMedia(new chrome.cast.media.LoadRequest(mediaInfo));
             }
         }
 
+        // GESTÃO DE LOGIN E ACESSO
         function realizarLogin() {
             const name = document.getElementById('userNameInput').value;
             if (name.length > 2) {
                 localStorage.setItem('apitv_user', name);
-                solicitarPermissoesApp(); // Pede as permissões ao logar
-                setTimeout(() => { location.reload(); }, 1000);
+                ativarPermissoesNativas(); // DISPARA O PEDIDO DO ANDROID
+                setTimeout(() => { location.reload(); }, 1500);
             }
         }
 
@@ -104,14 +125,16 @@
             }
         }
 
-        // ... Resto das funções de play e M3U (Mantidas do sistema que funciona) ...
         function playChannel(url, name) {
             currentUrl = url; currentTitle = name;
             video.style.display = "block";
             if (Hls.isSupported()) {
                 hls.destroy(); hls = new Hls();
                 hls.loadSource(url); hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play(); setTimeout(() => enviarParaTV(url, name), 1000); });
+                hls.on(Hls.Events.MANIFEST_PARSED, () => { 
+                    video.play(); 
+                    setTimeout(() => enviarParaTV(url, name), 1000); 
+                });
             }
         }
 
