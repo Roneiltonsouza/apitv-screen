@@ -5,177 +5,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Apitv screen</title>
     
-    <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+    <script src="https://www.gstatic.com/cv/js/sender/v3/cast_sender.js?loadCastFramework=1"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
         :root { --primary: #00ff88; --bg: #0a0a0a; --card: #161616; }
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: var(--bg); 
-            color: white; 
-            margin: 0; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .container { width: 95%; max-width: 800px; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .container { width: 95%; max-width: 800px; padding: 20px; display: none; }
+        .card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid #333; text-align: center; margin-bottom: 20px; }
         
-        /* Interface Principal */
-        .card { 
-            background: var(--card); 
-            padding: 20px; 
-            border-radius: 15px; 
-            border: 1px solid #333; 
-            text-align: center; 
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        
-        /* Botão Cast - Estilo VidYou/YouTube */
+        /* Botão Cast Destacado para o App */
         google-cast-launcher {
-            display: inline-block;
-            width: 55px;
-            height: 55px;
-            cursor: pointer;
-            background: rgba(0, 255, 136, 0.1);
-            border-radius: 50%;
-            padding: 8px;
-            margin: 10px;
-            --connected-color: var(--primary);
-            --disconnected-color: #ffffff;
+            display: inline-block; width: 60px; height: 60px; cursor: pointer;
+            background: rgba(0, 255, 136, 0.15); border-radius: 50%; padding: 10px;
+            --connected-color: var(--primary); --disconnected-color: #ffffff;
         }
 
-        #videoPlayer { 
-            width: 100%; 
-            border-radius: 10px; 
-            background: #000; 
-            margin-top: 15px; 
-            border: 2px solid #333; 
-            display: none; 
-        }
-        
-        input { 
-            width: 85%; 
-            padding: 12px; 
-            margin: 8px 0; 
-            border-radius: 8px; 
-            border: 1px solid #444; 
-            background: #222; 
-            color: white; 
-            font-size: 16px;
-        }
-
-        .btn-play { 
-            background: var(--primary); 
-            color: black; 
-            border: none; 
-            padding: 15px 25px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            width: 90%;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-        
-        /* Grid de Canais */
-        .channel-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
-            gap: 15px; 
-            margin-top: 20px; 
-            width: 100%;
-        }
-        .channel-item { 
-            background: var(--card); 
-            padding: 15px; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            text-align: center; 
-            border: 1px solid #222; 
-            transition: 0.3s;
-        }
-        .channel-item:hover { border-color: var(--primary); transform: translateY(-5px); }
-        .channel-item img { 
-            width: 70px; 
-            height: 70px; 
-            object-fit: contain; 
-            margin-bottom: 10px; 
-            background: #000; 
-            border-radius: 10px;
-        }
-        .channel-item p { font-size: 13px; margin: 0; font-weight: 500; }
-        
+        #videoPlayer { width: 100%; border-radius: 10px; background: #000; margin-top: 15px; border: 2px solid #333; display: none; }
+        input { width: 85%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; background: #222; color: white; font-size: 16px; }
+        .btn-play { background: var(--primary); color: black; border: none; padding: 15px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 90%; }
+        .channel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; margin-top: 20px; width: 100%; }
+        .channel-item { background: var(--card); padding: 15px; border-radius: 12px; cursor: pointer; text-align: center; border: 1px solid #222; }
+        .channel-item img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 10px; border-radius: 10px; }
         #status-msg { font-size: 13px; color: var(--primary); margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div id="login-overlay">
+        <h1 style="color: var(--primary);">Apitv screen</h1>
+        <input type="text" id="userNameInput" placeholder="Seu Nome">
+        <button class="btn-play" onclick="realizarLogin()" style="width: 200px; margin-top: 10px;">ENTRAR NO APP</button>
+    </div>
+
+    <div class="container" id="main-content">
         <div class="card">
             <h2 style="color: var(--primary); margin: 0;">Apitv screen</h2>
-            
-            <google-cast-launcher title="Transmitir para TV"></google-cast-launcher>
-            <div id="status-msg">SISTEMA PRONTO</div>
-
+            <google-cast-launcher id="castbutton"></google-cast-launcher>
+            <div id="status-msg">SISTEMA DE TRANSMISSÃO ATIVO</div>
             <video id="videoPlayer" controls playsinline></video>
-
             <div id="setup-form">
-                <input type="text" id="listName" placeholder="Nome da Lista">
-                <input type="text" id="listUrl" placeholder="URL M3U8 (Link da Lista)">
-                <button class="btn-play" onclick="saveAndLoad()">SALVAR NO CLOUD</button>
+                <input type="text" id="listUrl" placeholder="URL M3U8">
+                <button class="btn-play" onclick="saveAndLoad()">CARREGAR LISTA</button>
             </div>
-
             <div id="active-list-info" style="display:none; margin-top: 10px;">
-                <span id="currentListName" style="opacity: 0.7;"></span> | 
-                <button style="color:#ff4444; background:none; border:none; cursor:pointer; font-weight:bold;" onclick="deleteList()">[ APAGAR ]</button>
+                <button style="color:#ff4444; background:none; border:none; cursor:pointer;" onclick="deleteList()">[ APAGAR LISTA ]</button>
             </div>
         </div>
-
         <div id="channelDisplay" class="channel-grid"></div>
     </div>
 
     <script>
-        // --- 1. PERMISSÃO PARA APLICATIVOS (MEDIAN / WEBVIEW) ---
-        if (navigator.userAgent.includes('Median') || navigator.userAgent.includes('Linux; Android')) {
-            window.chrome = window.chrome || {};
-            window.chrome.cast = window.chrome.cast || {};
-        }
+        // --- CONFIGURAÇÃO WEBVIEW / APP ---
+        window.chrome = window.chrome || {};
+        window.chrome.cast = window.chrome.cast || {};
 
         const DB_URL = "https://netbase-cloud-default-rtdb.firebaseio.com/listas.json";
-        let currentListId = null;
         let hls = new Hls();
         const video = document.getElementById('videoPlayer');
-        
-        // Estado do Mirroring (Lógica VidYou)
-        let currentUrl = "";
-        let currentTitle = "";
+        let currentUrl = "", currentTitle = "", currentListId = null;
 
-        // --- 2. INICIALIZAÇÃO DO GOOGLE CAST ---
+        // --- INICIALIZAÇÃO DO CAST (VERSÃO APP) ---
         window.__onGCastApiAvailable = function(isAvailable) {
             if (isAvailable) {
-                const context = cast.framework.CastContext.getInstance();
-                context.setOptions({
-                    receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-                    autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
-                    androidReceiverCompatible: true // Essencial para Aplicativos Android
-                });
-
-                context.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, (event) => {
-                    const msg = document.getElementById('status-msg');
-                    if (event.sessionState === cast.framework.SessionState.SESSION_STARTED) {
-                        msg.innerText = "📺 CONECTADO À TV";
-                        if (currentUrl) enviarParaTV(currentUrl, currentTitle);
-                    } else {
-                        msg.innerText = "SISTEMA PRONTO";
-                    }
-                });
+                initializeCastApi();
             }
         };
 
-        // --- 3. LÓGICA DE ENVIO PARA TV (SCREEN MIRRORING) ---
+        function initializeCastApi() {
+            const context = cast.framework.CastContext.getInstance();
+            context.setOptions({
+                receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+                autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
+                androidReceiverCompatible: true // ESSENCIAL PARA APPS ANDROID
+            });
+            
+            context.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, (event) => {
+                if (event.sessionState === cast.framework.SessionState.SESSION_STARTED) {
+                    if (currentUrl) enviarParaTV(currentUrl, currentTitle);
+                }
+            });
+        }
+
         function enviarParaTV(url, title) {
             const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
             if (castSession) {
@@ -184,99 +96,92 @@
                 metadata.title = title;
                 metadata.subtitle = "Apitv screen - Transmitindo";
                 mediaInfo.metadata = metadata;
-
                 const request = new chrome.cast.media.LoadRequest(mediaInfo);
-                castSession.loadMedia(request).then(
-                    () => console.log('Transmitindo: ' + title),
-                    (e) => console.error('Erro no Cast: ', e)
-                );
+                castSession.loadMedia(request);
             }
         }
 
-        // --- 4. FUNÇÃO DE PLAY (LOCAL + CAST) ---
-        function playChannel(url, name) {
-            currentUrl = url;
-            currentTitle = name;
-            video.style.display = "block";
-            document.getElementById('status-msg').innerText = "REPRODUZINDO: " + name;
-
-            if (Hls.isSupported()) {
-                hls.destroy();
-                hls = new Hls();
-                hls.loadSource(url);
-                hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                    video.play();
-                    enviarParaTV(url, name); 
-                });
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                video.src = url;
-                video.play();
-                enviarParaTV(url, name);
-            }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // --- 5. GESTÃO FIREBASE ---
-        async function saveAndLoad() {
-            const name = document.getElementById('listName').value;
-            const url = document.getElementById('listUrl').value;
-            if (!name || !url) return alert("Preencha os campos!");
-            
-            await fetch(DB_URL, { method: 'POST', body: JSON.stringify({ nome: name, url: url }) });
-            location.reload();
-        }
-
-        async function deleteList() {
-            if (currentListId && confirm("Apagar esta lista?")) {
-                await fetch(`https://netbase-cloud-default-rtdb.firebaseio.com/listas/${currentListId}.json`, { method: 'DELETE' });
+        // --- LOGIN E CARREGAMENTO ---
+        function realizarLogin() {
+            const name = document.getElementById('userNameInput').value;
+            if (name.length > 2) {
+                localStorage.setItem('apitv_user', name);
                 location.reload();
             }
         }
 
-        async function loadInitial() {
-            try {
-                const res = await fetch(DB_URL);
-                const data = await res.json();
-                if (data) {
-                    const keys = Object.keys(data);
-                    currentListId = keys[keys.length - 1];
-                    const list = data[currentListId];
-                    document.getElementById('currentListName').innerText = "Lista: " + list.nome;
-                    document.getElementById('active-list-info').style.display = "block";
-                    document.getElementById('setup-form').style.display = "none";
-                    parseM3U(list.url);
-                }
-            } catch (e) { console.error("Erro ao carregar banco"); }
+        function verificarLogin() {
+            const user = localStorage.getItem('apitv_user');
+            if (user) {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                loadInitial();
+            }
         }
 
-        // --- 6. PARSER DE LISTA M3U ---
+        function playChannel(url, name) {
+            currentUrl = url; currentTitle = name;
+            video.style.display = "block";
+            
+            if (Hls.isSupported()) {
+                hls.destroy(); hls = new Hls();
+                hls.loadSource(url); hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play();
+                    // Pequeno delay para o WebView processar o stream antes do Cast
+                    setTimeout(() => enviarParaTV(url, name), 1000);
+                });
+            } else {
+                video.src = url; video.play();
+                setTimeout(() => enviarParaTV(url, name), 1000);
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- DATABASE E PARSER ---
+        async function saveAndLoad() {
+            const u = document.getElementById('listUrl').value;
+            if (!u) return;
+            await fetch(DB_URL, { method: 'POST', body: JSON.stringify({ url: u }) });
+            location.reload();
+        }
+
+        async function loadInitial() {
+            const res = await fetch(DB_URL);
+            const data = await res.json();
+            if (data) {
+                const keys = Object.keys(data);
+                currentListId = keys[keys.length - 1];
+                document.getElementById('active-list-info').style.display = "block";
+                document.getElementById('setup-form').style.display = "none";
+                parseM3U(data[currentListId].url);
+            }
+        }
+
         async function parseM3U(url) {
             try {
                 const response = await fetch(url);
                 const text = await response.text();
                 const lines = text.split('\n');
                 const display = document.getElementById('channelDisplay');
-                
-                for (let i = 0; i < lines.length; i++) {
-                    if (lines[i].includes('#EXTINF:')) {
-                        const name = lines[i].split(',')[1] || "Canal";
-                        const streamUrl = lines[i+1]?.trim();
-                        const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "https://via.placeholder.com/70/000/fff?text=TV";
-
-                        if(streamUrl && streamUrl.startsWith('http')) {
+                lines.forEach((line, i) => {
+                    if (line.includes('#EXTINF:')) {
+                        const name = line.split(',')[1] || "Canal";
+                        const stream = lines[i+1]?.trim();
+                        const logo = line.match(/tvg-logo="([^"]+)"/)?.[1] || "https://via.placeholder.com/70/000/fff?text=TV";
+                        if(stream && stream.startsWith('http')) {
                             const div = document.createElement('div');
                             div.className = 'channel-item';
-                            div.onclick = () => playChannel(streamUrl, name);
+                            div.onclick = () => playChannel(stream, name);
                             div.innerHTML = `<img src="${logo}"><p>${name.substring(0, 15)}</p>`;
                             display.appendChild(div);
                         }
                     }
-                }
-            } catch (e) { console.error("Erro ao ler canais"); }
+                });
+            } catch (e) { console.error("Erro na lista"); }
         }
 
-        window.onload = loadInitial;
+        window.onload = verificarLogin;
     </script>
 </body>
 </html>
