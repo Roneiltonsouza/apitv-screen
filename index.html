@@ -8,40 +8,26 @@
     <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/cdnbye@latest/dist/hlsjs-p2p-engine.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/clappr-pip@latest/dist/clappr-pip.min.js"></script>
+    
+    <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/clappr-chromecast-plugin@latest/dist/clappr-chromecast-plugin.min.js"></script>
 
     <style>
         :root { --primary: #00ff88; --bg: #0a0a0a; --card: #161616; --header-bg: #000; }
-        
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding-top: 135px; display: flex; flex-direction: column; align-items: center; }
         
-        /* CABEÇALHO COM BOTÕES ALINHADOS */
         .main-header { 
             position: fixed; top: 0; left: 0; width: 100%; background: var(--header-bg); 
             z-index: 1001; border-bottom: 2px solid #222; display: flex; 
             justify-content: space-between; align-items: center; padding: 12px 20px; box-sizing: border-box; 
         }
-        .header-title { color: var(--primary); margin: 0; font-size: 18px; letter-spacing: 2px; font-weight: bold; text-transform: uppercase; }
-        
+
+        .header-title { color: var(--primary); margin: 0; font-size: 18px; letter-spacing: 2px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
         .header-actions { display: flex; gap: 8px; align-items: center; }
 
-        /* BOTÃO TELA CHEIA NO CABEÇALHO */
-        .btn-fs-header { 
-            background: #111; 
-            color: var(--primary); 
-            border: 1px solid var(--primary); 
-            width: 35px; 
-            height: 35px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 18px;
-        }
-
+        .btn-fs-header { background: #111; color: var(--primary); border: 1px solid var(--primary); width: 35px; height: 35px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
         .btn-privado-header { background: #111; color: var(--primary); border: 1px solid var(--primary); padding: 8px 15px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; height: 35px; }
 
-        /* BARRA DE GÊNEROS */
         .genre-bar { position: fixed; top: 60px; left: 0; width: 100%; background: #0d0d0d; z-index: 1000; padding: 12px 0; border-bottom: 1px solid #222; }
         .tabs-container { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding: 0 15px; align-items: center; }
         .tabs-container::-webkit-scrollbar { display: none; }
@@ -49,23 +35,13 @@
         .tab-btn { background: #222; color: #777; border: 1px solid #333; padding: 10px 22px; border-radius: 25px; cursor: pointer; font-weight: bold; white-space: nowrap; font-size: 13px; }
         .tab-btn.active { background: var(--primary); color: black; border-color: var(--primary); }
 
-        /* PLAYER WRAPPER */
         .container { width: 95%; max-width: 850px; padding: 10px; }
-        #player-wrapper { 
-            width: 100%; background: #000; aspect-ratio: 16/9; 
-            border-radius: 12px; border: 2px solid var(--primary); 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; margin-bottom: 20px; display: none;
-            position: relative;
-        }
+        #player-wrapper { width: 100%; background: #000; aspect-ratio: 16/9; border-radius: 12px; border: 2px solid var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; margin-bottom: 20px; display: none; }
         
-        #player-wrapper:fullscreen { border: none; border-radius: 0; width: 100vw; height: 100vh; }
-        #player-wrapper:-webkit-full-screen { width: 100vw; height: 100vh; }
-
         .channel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 15px; width: 100%; }
         .channel-item { background: var(--card); padding: 15px; border-radius: 12px; cursor: pointer; text-align: center; border: 1px solid #222; transition: 0.3s; }
         .channel-item:hover { border-color: var(--primary); transform: scale(1.03); }
         .channel-item img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 10px; border-radius: 10px; background: #000; }
-        .channel-item p { font-size: 11px; margin: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         
         #status-msg { font-size: 10px; color: var(--primary); font-weight: bold; text-align: center; margin-bottom: 10px; text-transform: uppercase; }
 
@@ -79,7 +55,7 @@
     <header class="main-header">
         <h1 class="header-title">APITV SCREEN</h1>
         <div class="header-actions">
-            <button class="btn-fs-header" title="Tela Cheia" onclick="toggleFullScreen()">⛶</button>
+            <button class="btn-fs-header" onclick="toggleFullScreen()">⛶</button>
             <button class="btn-privado-header" onclick="acessoSeguro()">USUÁRIO PRIVADO</button>
         </div>
     </header>
@@ -93,19 +69,13 @@
     </nav>
 
     <div class="container">
-        <div id="status-msg">Sincronizando Grade...</div>
+        <div id="status-msg">Sincronizando...</div>
         <div id="player-wrapper"></div>
         <div id="channelDisplay" class="channel-grid"></div>
-
         <div id="private-panel">
-            <h3 style="color: var(--primary);">Painel Cloud</h3>
             <input type="text" id="listName" placeholder="Nome da Lista">
             <input type="text" id="listUrl" placeholder="Link M3U8">
-            <button class="btn-play" onclick="saveAndSync()">ATUALIZAR TODOS OS APPS</button>
-            <div id="active-list-info" style="display:none; margin-top: 20px;">
-                <span id="currentListName"></span><br><br>
-                <button style="color:red; background:none; border:none; cursor:pointer;" onclick="deleteList()">[ APAGAR NUVEM ]</button>
-            </div>
+            <button class="btn-play" onclick="saveAndSync()">ATUALIZAR CLOUD</button>
         </div>
     </div>
 
@@ -117,72 +87,54 @@
         let player;
         let allChannels = [];
         let currentCategory = 'Vidyou tv Aberta';
-        let currentListId = null;
 
-        function toggleFullScreen() {
-            const playerElem = document.getElementById('player-wrapper');
-            if (playerElem.style.display === 'none' || !player) {
-                alert("Dê play em um canal primeiro!");
-                return;
+        // Configuração para tentativa de conexão automática (Auto-Join)
+        window.__onGCastApiAvailable = function(isAvailable) {
+            if (isAvailable) {
+                const sessionRequest = new chrome.cast.SessionRequest(chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID);
+                const apiConfig = new chrome.cast.ApiConfig(sessionRequest, 
+                    (session) => console.log("Sessão ativa na TV"), 
+                    (receiver) => console.log("TV encontrada"),
+                    chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED // Tenta conectar sozinho se já conectou antes
+                );
+                chrome.cast.initialize(apiConfig, () => console.log("Cast Init"), (e) => console.error(e));
             }
-
-            if (!document.fullscreenElement) {
-                if (playerElem.requestFullscreen) { playerElem.requestFullscreen(); }
-                else if (playerElem.webkitRequestFullscreen) { playerElem.webkitRequestFullscreen(); }
-                else if (playerElem.msRequestFullscreen) { playerElem.msRequestFullscreen(); }
-            } else {
-                document.exitFullscreen();
-            }
-        }
-
-        function acessoSeguro() {
-            if (prompt("ID Único:") === ID_ACESSO) switchTab('privado', document.querySelector('.btn-privado-header'));
-        }
-
-        function switchTab(category, btn) {
-            currentCategory = category;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            if(category !== 'privado') btn.classList.add('active');
-            document.getElementById('channelDisplay').style.display = category === 'privado' ? 'none' : 'grid';
-            document.getElementById('private-panel').style.display = category === 'privado' ? 'block' : 'none';
-            if(category !== 'privado') renderChannels();
-        }
+        };
 
         function iniciarPlayer(url, name) {
             document.getElementById('player-wrapper').style.display = 'block';
-            document.getElementById('status-msg').innerText = "ASSISTINDO: " + name;
+            document.getElementById('status-msg').innerText = "ENVIANDO PARA TV: " + name;
+
             if (player) { player.destroy(); }
+            
             player = new Clappr.Player({
                 source: url,
                 parentId: "#player-wrapper",
-                width: '100%',
-                height: '100%',
+                width: '100%', height: '100%',
                 autoPlay: true,
-                plugins: [ClapprPip.PipButton, ClapprPip.PipPlugin],
-                playback: { hlsjsConfig: { enableWorker: true, p2pConfig: { live: true } } }
+                plugins: [ClapprPip.PipButton, ClapprPip.PipPlugin, ChromecastPlugin],
+                chromecast: {
+                    appId: '9DFB77C0',
+                    media: { title: name, subtitle: 'Sincronizado' }
+                }
             });
+
+            // GATILHO AUTOMÁTICO: Tenta abrir a busca da TV assim que o canal carrega
+            setTimeout(() => {
+                const castBtn = document.querySelector('[data-chromecast]');
+                if (castBtn) castBtn.click();
+            }, 1500);
+
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        async function saveAndSync() {
-            const n = document.getElementById('listName').value;
-            const u = document.getElementById('listUrl').value;
-            if (n && u) {
-                await fetch(`${DB_URL}.json?auth=${API_KEY}`, { method: 'POST', body: JSON.stringify({ nome: n, url: u }) });
-                location.reload();
-            }
-        }
-
+        // Funções da Nuvem
         async function loadCloud() {
             const res = await fetch(`${DB_URL}.json?auth=${API_KEY}`);
             const data = await res.json();
             if (data) {
                 const keys = Object.keys(data);
-                currentListId = keys[keys.length - 1];
-                const list = data[currentListId];
-                document.getElementById('currentListName').innerText = "Ativa: " + list.nome;
-                document.getElementById('active-list-info').style.display = "block";
-                parseM3U(list.url);
+                parseM3U(data[keys[keys.length - 1]].url);
             }
         }
 
@@ -194,10 +146,10 @@
             for (let i = 0; i < lines.length; i++) {
                 if (lines[i].includes('#EXTINF:')) {
                     const info = lines[i];
-                    const name = info.split(',')[1]?.trim() || "Canal";
                     const streamUrl = lines[i+1]?.trim();
+                    const name = info.split(',')[1]?.trim() || "Canal";
                     const logo = info.match(/tvg-logo="([^"]+)"/)?.[1] || "";
-                    const group = info.match(/group-title="([^"]+)"/)?.[1]?.replace(/\r?\n|\r/g, " ").trim() || "";
+                    const group = info.match(/group-title="([^"]+)"/)?.[1]?.trim() || "";
                     if(streamUrl?.startsWith('http')) allChannels.push({ name, url: streamUrl, logo, group });
                 }
             }
@@ -207,25 +159,33 @@
         function renderChannels() {
             const display = document.getElementById('channelDisplay');
             display.innerHTML = '';
-            const filtered = allChannels.filter(c => c.group.toLowerCase() === currentCategory.toLowerCase());
-            filtered.forEach(c => {
+            allChannels.filter(c => c.group.toLowerCase() === currentCategory.toLowerCase()).forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'channel-item';
                 div.onclick = () => iniciarPlayer(c.url, c.name);
-                div.innerHTML = `<img src="${c.logo || 'https://via.placeholder.com/70/111/00ff88?text=TV'}"><p>${c.name}</p>`;
+                div.innerHTML = `<img src="${c.logo || 'https://via.placeholder.com/70'}"><p>${c.name}</p>`;
                 display.appendChild(div);
             });
-            document.getElementById('status-msg').innerText = "Grade Sincronizada";
+            document.getElementById('status-msg').innerText = "PRONTO";
         }
 
-        async function deleteList() {
-            if (currentListId && confirm("Apagar da nuvem?")) {
-                await fetch(`${DB_URL}/${currentListId}.json?auth=${API_KEY}`, { method: 'DELETE' });
-                location.reload();
-            }
+        function toggleFullScreen() {
+            const p = document.getElementById('player-wrapper');
+            if (p.requestFullscreen) p.requestFullscreen();
+        }
+
+        function acessoSeguro() { if (prompt("ID Único:") === ID_ACESSO) switchTab('privado', document.querySelector('.btn-privado-header')); }
+        
+        function switchTab(cat, btn) {
+            currentCategory = cat;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            if(cat !== 'privado') btn.classList.add('active');
+            document.getElementById('channelDisplay').style.display = cat === 'privado' ? 'none' : 'grid';
+            document.getElementById('private-panel').style.display = cat === 'privado' ? 'block' : 'none';
+            if(cat !== 'privado') renderChannels();
         }
 
         window.onload = loadCloud;
     </script>
 </body>
-                </html>
+</html>
