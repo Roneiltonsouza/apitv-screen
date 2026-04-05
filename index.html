@@ -30,15 +30,11 @@
         .channel-item img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 10px; border-radius: 10px; background: #000; }
         .channel-item p { font-size: 11px; margin: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         #private-panel { display: none; background: #0f0f0f; padding: 30px; border-radius: 20px; border: 1px solid var(--primary); text-align: center; margin-top: 20px; }
-        input { width: 90%; padding: 15px; margin: 12px 0; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 16px; outline: none; }
+        input, select { width: 90%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 16px; outline: none; }
         .btn-play { background: var(--primary); color: black; border: none; padding: 18px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 95%; font-size: 14px; text-transform: uppercase; }
-        
-        /* Estilos do Gerenciador de YouTube dentro do Painel */
         .yt-manager-box { margin-top: 20px; text-align: left; background: #111; border-radius: 10px; padding: 10px; max-height: 250px; overflow-y: auto; border: 1px solid #222; }
         .yt-manager-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; font-size: 12px; }
         .yt-manager-actions span { margin-left: 12px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
-        
-        google-cast-launcher { display: none; }
     </style>
 </head>
 <body>
@@ -54,6 +50,7 @@
     <nav class="genre-bar">
         <div class="tabs-container">
             <button class="tab-btn" onclick="switchTab('Live YouTube', this)">Live YouTube</button>
+            <button class="tab-btn" onclick="switchTab('Filmes', this)">Filmes</button>
             <button class="tab-btn active" onclick="switchTab('Vidyou tv Aberta', this)">Vidyou Tv Aberta</button>
             <button class="tab-btn" onclick="switchTab('Vidyou Variedades', this)">Vidyou Variedades</button>
             <button class="tab-btn" onclick="switchTab('Vidyou Kids', this)">Vidyou Kids</button>
@@ -66,31 +63,18 @@
         <div id="channelDisplay" class="channel-grid"></div>
 
         <div id="private-panel">
-            <h3 style="color: var(--primary);">Painel Cloud M3U8</h3>
-            <input type="text" id="listName" placeholder="Nome da Lista">
-            <input type="text" id="listUrl" placeholder="Link M3U8">
-            <button class="btn-play" onclick="saveAndSync()">ATUALIZAR TODOS OS APPS</button>
-            
-            <div id="active-list-info" style="display:none; margin-top: 20px;">
-                <span id="currentListName"></span><br><br>
-                <button style="color:red; background:none; border:none; cursor:pointer; font-weight:bold;" onclick="deleteList()">[ APAGAR NUVEM IPTV ]</button>
-            </div>
-
-            <hr style="border: 1px solid #222; margin: 30px 0;">
-
-            <h3 id="yt-form-title" style="color: #ff0000;">Gerenciar YouTube</h3>
-            <input type="hidden" id="ytEditId">
-            <input type="text" id="ytName" placeholder="Nome do Canal/Filme">
+            <h3 style="color: var(--primary);">Painel Administrativo</h3>
+            <select id="ytCategory">
+                <option value="Live YouTube">Live YouTube</option>
+                <option value="Filmes">Filmes</option>
+            </select>
+            <input type="text" id="ytName" placeholder="Título">
             <input type="text" id="ytLogo" placeholder="Link da Logo">
-            <input type="text" id="ytUrl" placeholder="Link da Live YouTube">
-            <button id="btn-yt-save" class="btn-play" style="background: #ff0000; color: white;" onclick="saveYoutube()">SALVAR NO YOUTUBE</button>
-            <button id="btn-yt-cancel" style="display:none; background: #333; color: white; margin-top: 10px;" class="btn-play" onclick="cancelYtEdit()">CANCELAR EDIÇÃO</button>
-
+            <input type="text" id="ytUrl" placeholder="Link (YouTube ou BrStream)">
+            <button class="btn-play" style="background: var(--primary);" onclick="saveYoutube()">SALVAR CONTEÚDO</button>
             <div class="yt-manager-box" id="yt-manager-list"></div>
         </div>
     </div>
-
-    <google-cast-launcher id="cast-trigger"></google-cast-launcher>
 
     <script>
         const API_KEY = "AIza58AfRp1KcBIxoobHdZ2gFzL4WesjLpWWTmB";
@@ -98,91 +82,57 @@
         const YT_URL = "https://netbase-cloud-default-rtdb.firebaseio.com/youtube";
         const ID_ACESSO = "netchaveapi";
         
-        let player, allChannels = [], ytChannels = [], currentCategory = 'Vidyou tv Aberta', currentListId = null;
-        let currentUrl = "", currentTitle = "";
-
-        window.__onGCastApiAvailable = (isAvailable) => {
-            if (isAvailable) cast.framework.CastContext.getInstance().setOptions({
-                receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-                autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
-            });
-        };
+        let player, allChannels = [], ytChannels = [], currentCategory = 'Vidyou tv Aberta';
 
         function acessoSeguro() {
-            if (prompt("ID Único:") === ID_ACESSO) switchTab('privado', document.querySelector('.btn-privado-header'));
+            if (prompt("ID Único:") === ID_ACESSO) switchTab('privado', null);
         }
 
         function switchTab(category, btn) {
             currentCategory = category;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            if(category !== 'privado') btn.classList.add('active');
+            if(btn) btn.classList.add('active');
             document.getElementById('channelDisplay').style.display = category === 'privado' ? 'none' : 'grid';
             document.getElementById('private-panel').style.display = category === 'privado' ? 'block' : 'none';
             if(category !== 'privado') renderChannels();
         }
 
         function iniciarPlayer(url, name) {
-            currentUrl = url; currentTitle = name;
             const container = document.getElementById('player-wrapper');
             container.style.display = 'block';
             if (player) player.destroy();
+            container.innerHTML = "";
 
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 let vid = url.split('v=')[1] || url.split('/').pop().split('?')[0];
-                if(url.includes('live/')) vid = url.split('live/')[1].split('?')[0];
                 container.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${vid}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
             } else {
-                player = new Clappr.Player({ source: url, parentId: "#player-wrapper", width: '100%', height: '100%', autoPlay: true });
+                // CORREÇÃO PARA O FORMATO BRSTREAM
+                let playerConfig = {
+                    source: url,
+                    parentId: "#player-wrapper",
+                    width: '100%',
+                    height: '100%',
+                    autoPlay: true,
+                    plugins: [ClapprPip]
+                };
+
+                // Se for o seu link especial, forçamos o tipo para HLS
+                if (url.includes('brstream.cc')) {
+                    playerConfig.mimeType = "application/x-mpegURL";
+                }
+
+                player = new Clappr.Player(playerConfig);
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        async function saveAndSync() {
-            const n = document.getElementById('listName').value, u = document.getElementById('listUrl').value;
-            if (n && u) { await fetch(`${DB_URL}.json?auth=${API_KEY}`, { method: 'POST', body: JSON.stringify({ nome: n, url: u }) }); location.reload(); }
-        }
-
-        async function deleteList() {
-            if (currentListId && confirm("Apagar lista IPTV da nuvem?")) {
-                await fetch(`${DB_URL}/${currentListId}.json?auth=${API_KEY}`, { method: 'DELETE' });
-                location.reload();
-            }
-        }
-
-        // FUNÇÕES DO YOUTUBE (EDITAR E EXCLUIR)
         async function saveYoutube() {
-            const n = document.getElementById('ytName').value, l = document.getElementById('ytLogo').value, u = document.getElementById('ytUrl').value, id = document.getElementById('ytEditId').value;
+            const n = document.getElementById('ytName').value, l = document.getElementById('ytLogo').value, 
+                  u = document.getElementById('ytUrl').value, c = document.getElementById('ytCategory').value;
             if (n && u) {
-                const method = id ? 'PUT' : 'POST';
-                const endpoint = id ? `${YT_URL}/${id}.json?auth=${API_KEY}` : `${YT_URL}.json?auth=${API_KEY}`;
-                await fetch(endpoint, { method: method, body: JSON.stringify({ name: n, logo: l, url: u }) });
+                await fetch(`${YT_URL}.json?auth=${API_KEY}`, { method: 'POST', body: JSON.stringify({ name: n, logo: l, url: u, group: c }) });
                 location.reload();
-            }
-        }
-
-        function editYt(id, name, logo, url) {
-            document.getElementById('ytEditId').value = id;
-            document.getElementById('ytName').value = name;
-            document.getElementById('ytLogo').value = logo;
-            document.getElementById('ytUrl').value = url;
-            document.getElementById('yt-form-title').innerText = "EDITANDO CANAL";
-            document.getElementById('btn-yt-cancel').style.display = "block";
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function cancelYtEdit() {
-            document.getElementById('ytEditId').value = "";
-            document.getElementById('ytName').value = "";
-            document.getElementById('ytLogo').value = "";
-            document.getElementById('ytUrl').value = "";
-            document.getElementById('yt-form-title').innerText = "GERENCIAR YOUTUBE";
-            document.getElementById('btn-yt-cancel').style.display = "none";
-        }
-
-        async function deleteYt(id) {
-            if(confirm("Excluir esta Live do YouTube?")) { 
-                await fetch(`${YT_URL}/${id}.json?auth=${API_KEY}`, { method: 'DELETE' }); 
-                location.reload(); 
             }
         }
 
@@ -191,19 +141,13 @@
             const data = await res.json();
             if (data) {
                 const keys = Object.keys(data);
-                currentListId = keys[keys.length - 1];
-                document.getElementById('currentListName').innerText = "Lista IPTV Ativa: " + data[currentListId].nome;
-                document.getElementById('active-list-info').style.display = "block";
-                parseM3U(data[currentListId].url);
+                parseM3U(data[keys[keys.length - 1]].url);
             }
             const resYt = await fetch(`${YT_URL}.json?auth=${API_KEY}`);
             const dataYt = await resYt.json();
-            const manager = document.getElementById('yt-manager-list');
             if (dataYt) {
                 ytChannels = Object.keys(dataYt).map(id => {
-                    const c = dataYt[id];
-                    manager.innerHTML += `<div class="yt-manager-item"><span>${c.name}</span><div class="yt-manager-actions"><span style="color:#007bff" onclick="editYt('${id}','${c.name}','${c.logo}','${c.url}')">EDITAR</span><span style="color:#ff4444" onclick="deleteYt('${id}')">EXCLUIR</span></div></div>`;
-                    return { ...c, group: 'Live YouTube' };
+                    return { ...dataYt[id], id };
                 });
             }
         }
@@ -227,12 +171,15 @@
         function renderChannels() {
             const display = document.getElementById('channelDisplay');
             display.innerHTML = '';
-            const list = currentCategory === 'Live YouTube' ? ytChannels : allChannels.filter(c => c.group.toLowerCase() === currentCategory.toLowerCase());
+            let list = (currentCategory === 'Live YouTube' || currentCategory === 'Filmes') ? 
+                        ytChannels.filter(c => (c.group || 'Live YouTube') === currentCategory) : 
+                        allChannels.filter(c => c.group.toLowerCase() === currentCategory.toLowerCase());
+
             list.forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'channel-item';
                 div.onclick = () => iniciarPlayer(c.url, c.name);
-                div.innerHTML = `<img src="${c.logo || 'https://via.placeholder.com/70/111/00ff88?text=TV'}"><p>${c.name}</p>`;
+                div.innerHTML = `<img src="${c.logo || 'https://via.placeholder.com/70/111/00ff88?text=PLAY'}"><p>${c.name}</p>`;
                 display.appendChild(div);
             });
         }
