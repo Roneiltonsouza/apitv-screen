@@ -8,33 +8,65 @@
     <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/cdnbye@latest/dist/hlsjs-p2p-engine.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/clappr-pip@latest/dist/clappr-pip.min.js"></script>
+    
     <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
     <style>
         :root { --primary: #00ff88; --bg: #0a0a0a; --card: #161616; --header-bg: #000; }
+        
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding-top: 135px; display: flex; flex-direction: column; align-items: center; }
-        .main-header { position: fixed; top: 0; left: 0; width: 100%; background: var(--header-bg); z-index: 1001; border-bottom: 2px solid #222; display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; box-sizing: border-box; }
+        
+        .main-header { 
+            position: fixed; top: 0; left: 0; width: 100%; background: var(--header-bg); 
+            z-index: 1001; border-bottom: 2px solid #222; display: flex; 
+            justify-content: space-between; align-items: center; padding: 12px 20px; box-sizing: border-box; 
+        }
         .header-title { color: var(--primary); margin: 0; font-size: 18px; letter-spacing: 2px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        
         .header-actions { display: flex; gap: 8px; align-items: center; }
-        .btn-fs-header { background: #111; color: var(--primary); border: 1px solid var(--primary); width: 35px; height: 35px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+
+        .btn-fs-header { 
+            background: #111; color: var(--primary); border: 1px solid var(--primary); 
+            width: 35px; height: 35px; border-radius: 6px; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center; font-size: 18px;
+        }
+
         .btn-privado-header { background: #111; color: var(--primary); border: 1px solid var(--primary); padding: 8px 15px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; height: 35px; }
+
         .genre-bar { position: fixed; top: 60px; left: 0; width: 100%; background: #0d0d0d; z-index: 1000; padding: 12px 0; border-bottom: 1px solid #222; }
         .tabs-container { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding: 0 15px; align-items: center; }
+        .tabs-container::-webkit-scrollbar { display: none; }
+        
         .tab-btn { background: #222; color: #777; border: 1px solid #333; padding: 10px 22px; border-radius: 25px; cursor: pointer; font-weight: bold; white-space: nowrap; font-size: 13px; }
         .tab-btn.active { background: var(--primary); color: black; border-color: var(--primary); }
+
         .container { width: 95%; max-width: 850px; padding: 10px; }
-        #player-wrapper { width: 100%; background: #000; aspect-ratio: 16/9; border-radius: 12px; border: 2px solid var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; margin-bottom: 20px; display: none; position: relative; }
+        #player-wrapper { 
+            width: 100%; background: #000; aspect-ratio: 16/9; 
+            border-radius: 12px; border: 2px solid var(--primary); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; margin-bottom: 20px; display: none;
+            position: relative;
+        }
+        
         #player-wrapper:fullscreen { border: none; border-radius: 0; width: 100vw; height: 100vh; }
+
         .channel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 15px; width: 100%; }
         .channel-item { background: var(--card); padding: 15px; border-radius: 12px; cursor: pointer; text-align: center; border: 1px solid #222; transition: 0.3s; }
+        .channel-item:hover { border-color: var(--primary); transform: scale(1.03); }
         .channel-item img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 10px; border-radius: 10px; background: #000; }
         .channel-item p { font-size: 11px; margin: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        #status-msg { font-size: 10px; color: var(--primary); font-weight: bold; text-align: center; margin-bottom: 10px; text-transform: uppercase; }
+
         #private-panel { display: none; background: #0f0f0f; padding: 30px; border-radius: 20px; border: 1px solid var(--primary); text-align: center; margin-top: 20px; }
         input, select { width: 90%; padding: 15px; margin: 12px 0; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 16px; outline: none; }
         .btn-play { background: var(--primary); color: black; border: none; padding: 18px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 95%; font-size: 14px; text-transform: uppercase; }
+
+        /* Estilos da Lista de Gerenciamento */
         .yt-manager-box { margin-top: 20px; text-align: left; background: #111; border-radius: 10px; padding: 10px; max-height: 250px; overflow-y: auto; border: 1px solid #222; }
         .yt-manager-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; font-size: 12px; }
         .yt-manager-actions span { margin-left: 12px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+        
         google-cast-launcher { display: none; }
     </style>
 </head>
@@ -59,7 +91,7 @@
     </nav>
 
     <div class="container">
-        <div id="status-msg" style="font-size: 10px; color: var(--primary); font-weight: bold; text-align: center; margin-bottom: 10px;">Sincronizando Grade...</div>
+        <div id="status-msg">Sincronizando Grade...</div>
         <div id="player-wrapper"></div>
         <div id="channelDisplay" class="channel-grid"></div>
 
@@ -69,24 +101,26 @@
             <input type="text" id="listUrl" placeholder="Link M3U8">
             <button class="btn-play" onclick="saveAndSync()">ATUALIZAR TODOS OS APPS</button>
             
-            <div id="active-list-info" style="display:none; margin-top: 20px;">
-                <span id="currentListName"></span><br><br>
-                <button style="color:red; background:none; border:none; cursor:pointer; font-weight:bold;" onclick="deleteList()">[ APAGAR NUVEM IPTV ]</button>
-            </div>
-
-            <hr style="border: 1px solid #222; margin: 30px 0;">
-
+            <hr style="border: 1px solid #222; margin: 20px 0;">
+            
             <h3 id="yt-form-title" style="color: #ff0000;">Gerenciar Conteúdo</h3>
             <input type="hidden" id="ytEditId">
-            <select id="ytCategory" style="margin-bottom: 5px;">
+            <select id="ytCategory">
                 <option value="Live YouTube">Live YouTube</option>
                 <option value="Filmes">Filmes</option>
             </select>
             <input type="text" id="ytName" placeholder="Nome do Canal/Filme">
             <input type="text" id="ytLogo" placeholder="Link da Logo">
-            <input type="text" id="ytUrl" placeholder="Link (YouTube ou Filme)">
-            <button id="btn-yt-save" class="btn-play" style="background: #ff0000; color: white;" onclick="saveYoutube()">SALVAR AGORA</button>
+            <input type="text" id="ytUrl" placeholder="Link (YouTube ou BrStream)">
+            <button id="btn-yt-save" class="btn-play" style="background: #ff0000; color: white;" onclick="saveYoutube()">SALVAR CONTEÚDO</button>
+            <button id="btn-yt-cancel" style="display:none; background: #333; color: white; margin-top: 10px;" class="btn-play" onclick="cancelYtEdit()">CANCELAR EDIÇÃO</button>
+
             <div class="yt-manager-box" id="yt-manager-list"></div>
+
+            <div id="active-list-info" style="display:none; margin-top: 20px;">
+                <span id="currentListName"></span><br><br>
+                <button style="color:red; background:none; border:none; cursor:pointer;" onclick="deleteList()">[ APAGAR NUVEM ]</button>
+            </div>
         </div>
     </div>
 
@@ -99,6 +133,14 @@
         const ID_ACESSO = "netchaveapi";
         
         let player, allChannels = [], ytChannels = [], currentCategory = 'Vidyou tv Aberta', currentListId = null;
+        let currentUrl = "", currentTitle = "";
+
+        function toggleFullScreen() {
+            const playerElem = document.getElementById('player-wrapper');
+            if (playerElem.style.display === 'none') return alert("Dê play primeiro!");
+            if (!document.fullscreenElement) playerElem.requestFullscreen?.() || playerElem.webkitRequestFullscreen?.();
+            else document.exitFullscreen();
+        }
 
         function acessoSeguro() {
             if (prompt("ID Único:") === ID_ACESSO) switchTab('privado', document.querySelector('.btn-privado-header'));
@@ -114,18 +156,23 @@
         }
 
         function iniciarPlayer(url, name) {
+            currentUrl = url; currentTitle = name;
             const container = document.getElementById('player-wrapper');
             container.style.display = 'block';
+            document.getElementById('status-msg').innerText = "ASSISTINDO: " + name;
             if (player) player.destroy();
-            container.innerHTML = "";
 
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 let vid = url.split('v=')[1] || url.split('/').pop().split('?')[0];
                 if(url.includes('live/')) vid = url.split('live/')[1].split('?')[0];
                 container.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${vid}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
             } else {
-                let config = { source: url, parentId: "#player-wrapper", width: '100%', height: '100%', autoPlay: true };
-                if (url.includes('brstream.cc')) { config.mimeType = "application/x-mpegURL"; }
+                let config = { 
+                    source: url, parentId: "#player-wrapper", width: '100%', height: '100%', autoPlay: true,
+                    plugins: [ClapprPip.PipButton, ClapprPip.PipPlugin],
+                    playback: { hlsjsConfig: { enableWorker: true } }
+                };
+                if (url.includes('brstream.cc')) config.mimeType = "application/x-mpegURL";
                 player = new Clappr.Player(config);
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -138,11 +185,31 @@
 
         async function saveYoutube() {
             const n = document.getElementById('ytName').value, l = document.getElementById('ytLogo').value, 
-                  u = document.getElementById('ytUrl').value, c = document.getElementById('ytCategory').value;
+                  u = document.getElementById('ytUrl').value, c = document.getElementById('ytCategory').value,
+                  id = document.getElementById('ytEditId').value;
             if (n && u) {
-                await fetch(`${YT_URL}.json?auth=${API_KEY}`, { method: 'POST', body: JSON.stringify({ name: n, logo: l, url: u, group: c }) });
+                const method = id ? 'PUT' : 'POST';
+                const endpoint = id ? `${YT_URL}/${id}.json?auth=${API_KEY}` : `${YT_URL}.json?auth=${API_KEY}`;
+                await fetch(endpoint, { method: method, body: JSON.stringify({ name: n, logo: l, url: u, group: c }) });
                 location.reload();
             }
+        }
+
+        function editYt(id, name, logo, url, group) {
+            document.getElementById('ytEditId').value = id;
+            document.getElementById('ytName').value = name;
+            document.getElementById('ytLogo').value = logo;
+            document.getElementById('ytUrl').value = url;
+            document.getElementById('ytCategory').value = group || "Live YouTube";
+            document.getElementById('yt-form-title').innerText = "EDITANDO CONTEÚDO";
+            document.getElementById('btn-yt-cancel').style.display = "block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelYtEdit() { location.reload(); }
+
+        async function deleteYt(id) {
+            if(confirm("Excluir item permanentemente?")) { await fetch(`${YT_URL}/${id}.json?auth=${API_KEY}`, { method: 'DELETE' }); location.reload(); }
         }
 
         async function loadCloud() {
@@ -151,25 +218,23 @@
             if (data) {
                 const keys = Object.keys(data);
                 currentListId = keys[keys.length - 1];
-                document.getElementById('currentListName').innerText = "Lista IPTV Ativa: " + data[currentListId].nome;
+                document.getElementById('currentListName').innerText = "Ativa: " + data[currentListId].nome;
                 document.getElementById('active-list-info').style.display = "block";
                 parseM3U(data[currentListId].url);
             }
+            
             const resYt = await fetch(`${YT_URL}.json?auth=${API_KEY}`);
             const dataYt = await resYt.json();
             const manager = document.getElementById('yt-manager-list');
+            manager.innerHTML = '';
             if (dataYt) {
                 ytChannels = Object.keys(dataYt).map(id => {
                     const c = dataYt[id];
                     const cat = c.group || 'Live YouTube';
-                    manager.innerHTML += `<div class="yt-manager-item"><span>[${cat}] ${c.name}</span><div class="yt-manager-actions"><span style="color:#ff4444" onclick="deleteYt('${id}')">EXCLUIR</span></div></div>`;
+                    manager.innerHTML += `<div class="yt-manager-item"><span>[${cat}] ${c.name}</span><div class="yt-manager-actions"><span style="color:#007bff" onclick="editYt('${id}','${c.name}','${c.logo}','${c.url}','${c.group}')">EDITAR</span><span style="color:#ff4444" onclick="deleteYt('${id}')">X</span></div></div>`;
                     return { ...c, id, group: cat };
                 });
             }
-        }
-
-        async function deleteYt(id) {
-            if(confirm("Excluir?")) { await fetch(`${YT_URL}/${id}.json?auth=${API_KEY}`, { method: 'DELETE' }); location.reload(); }
         }
 
         async function parseM3U(url) {
@@ -181,7 +246,7 @@
                     const name = lines[i].split(',')[1]?.trim();
                     const sUrl = lines[i+1]?.trim();
                     const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "";
-                    const group = lines[i].match(/group-title="([^"]+)"/)?.[1]?.trim() || "";
+                    const group = lines[i].match(/group-title="([^"]+)"/)?.[1]?.replace(/\r?\n|\r/g, " ").trim() || "";
                     if(sUrl?.startsWith('http')) allChannels.push({ name, url: sUrl, logo, group });
                 }
             }
@@ -199,15 +264,14 @@
                 const div = document.createElement('div');
                 div.className = 'channel-item';
                 div.onclick = () => iniciarPlayer(c.url, c.name);
-                div.innerHTML = `<img src="${c.logo || 'https://via.placeholder.com/70/111/00ff88?text=PLAY'}"><p>${c.name}</p>`;
+                div.innerHTML = `<img src="${c.logo || 'https://via.placeholder.com/70/111/00ff88?text=TV'}"><p>${c.name}</p>`;
                 display.appendChild(div);
             });
+            document.getElementById('status-msg').innerText = "Grade Sincronizada";
         }
 
-        function toggleFullScreen() {
-            const p = document.getElementById('player-wrapper');
-            if (!document.fullscreenElement) p.requestFullscreen?.() || p.webkitRequestFullscreen?.();
-            else document.exitFullscreen();
+        async function deleteList() {
+            if (currentListId && confirm("Apagar lista Cloud?")) { await fetch(`${DB_URL}/${currentListId}.json?auth=${API_KEY}`, { method: 'DELETE' }); location.reload(); }
         }
 
         window.onload = loadCloud;
