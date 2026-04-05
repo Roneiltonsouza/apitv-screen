@@ -14,7 +14,6 @@
         
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding-top: 135px; display: flex; flex-direction: column; align-items: center; }
         
-        /* CABEÇALHO SUPERIOR */
         .main-header { 
             position: fixed; top: 0; left: 0; width: 100%; background: var(--header-bg); 
             z-index: 1001; border-bottom: 2px solid #222; display: flex; 
@@ -25,21 +24,41 @@
 
         /* BARRA DE GÊNEROS */
         .genre-bar { position: fixed; top: 60px; left: 0; width: 100%; background: #0d0d0d; z-index: 1000; padding: 12px 0; border-bottom: 1px solid #222; }
-        .tabs-container { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; padding: 0 15px; }
+        .tabs-container { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding: 0 15px; align-items: center; }
         .tabs-container::-webkit-scrollbar { display: none; }
+        
         .tab-btn { background: #222; color: #777; border: 1px solid #333; padding: 10px 22px; border-radius: 25px; cursor: pointer; font-weight: bold; white-space: nowrap; font-size: 13px; }
         .tab-btn.active { background: var(--primary); color: black; border-color: var(--primary); }
 
-        /* PLAYER WRAPPER TURBINADO */
+        /* ABA PEQUENA DE TELA CHEIA (LADO ESQUERDO) */
+        .btn-fs-small { 
+            background: #1a1a1a; 
+            color: var(--primary); 
+            border: 1px solid #333; 
+            min-width: 40px; 
+            height: 38px; 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        /* PLAYER WRAPPER */
         .container { width: 95%; max-width: 850px; padding: 10px; }
         #player-wrapper { 
             width: 100%; background: #000; aspect-ratio: 16/9; 
             border-radius: 12px; border: 2px solid var(--primary); 
             box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; margin-bottom: 20px; display: none;
+            position: relative;
         }
-        #player-wrapper [data-player] { height: 100% !important; width: 100% !important; }
+        
+        /* Estilo para Fullscreen Nativo */
+        #player-wrapper:fullscreen { border: none; border-radius: 0; width: 100vw; height: 100vh; }
+        #player-wrapper:-webkit-full-screen { width: 100vw; height: 100vh; }
 
-        /* GRID DE CANAIS */
         .channel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 15px; width: 100%; }
         .channel-item { background: var(--card); padding: 15px; border-radius: 12px; cursor: pointer; text-align: center; border: 1px solid #222; transition: 0.3s; }
         .channel-item:hover { border-color: var(--primary); transform: scale(1.03); }
@@ -48,7 +67,6 @@
         
         #status-msg { font-size: 10px; color: var(--primary); font-weight: bold; text-align: center; margin-bottom: 10px; text-transform: uppercase; }
 
-        /* PAINEL ADMIN */
         #private-panel { display: none; background: #0f0f0f; padding: 30px; border-radius: 20px; border: 1px solid var(--primary); text-align: center; margin-top: 20px; }
         input { width: 90%; padding: 15px; margin: 12px 0; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 16px; outline: none; }
         .btn-play { background: var(--primary); color: black; border: none; padding: 18px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 95%; font-size: 14px; text-transform: uppercase; }
@@ -63,6 +81,8 @@
 
     <nav class="genre-bar">
         <div class="tabs-container">
+            <button class="btn-fs-small" title="Tela Cheia" onclick="toggleFullScreen()">⛶</button>
+            
             <button class="tab-btn active" onclick="switchTab('Vidyou tv Aberta', this)">Vidyou Tv Aberta</button>
             <button class="tab-btn" onclick="switchTab('Vidyou Variedades', this)">Vidyou Variedades</button>
             <button class="tab-btn" onclick="switchTab('Vidyou Kids', this)">Vidyou Kids</button>
@@ -71,9 +91,7 @@
 
     <div class="container">
         <div id="status-msg">Sincronizando Grade...</div>
-        
         <div id="player-wrapper"></div>
-
         <div id="channelDisplay" class="channel-grid"></div>
 
         <div id="private-panel">
@@ -98,6 +116,22 @@
         let currentCategory = 'Vidyou tv Aberta';
         let currentListId = null;
 
+        function toggleFullScreen() {
+            const playerElem = document.getElementById('player-wrapper');
+            if (playerElem.style.display === 'none' || !player) {
+                alert("Dê play em um canal primeiro!");
+                return;
+            }
+
+            if (!document.fullscreenElement) {
+                if (playerElem.requestFullscreen) { playerElem.requestFullscreen(); }
+                else if (playerElem.webkitRequestFullscreen) { playerElem.webkitRequestFullscreen(); }
+                else if (playerElem.msRequestFullscreen) { playerElem.msRequestFullscreen(); }
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
         function acessoSeguro() {
             if (prompt("ID Único:") === ID_ACESSO) switchTab('privado', document.querySelector('.btn-privado-header'));
         }
@@ -106,36 +140,23 @@
             currentCategory = category;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             if(category !== 'privado') btn.classList.add('active');
-            
             document.getElementById('channelDisplay').style.display = category === 'privado' ? 'none' : 'grid';
             document.getElementById('private-panel').style.display = category === 'privado' ? 'block' : 'none';
-            
             if(category !== 'privado') renderChannels();
         }
 
-        // FUNÇÃO DO PLAYER TURBINADO COM P2P E PIP
         function iniciarPlayer(url, name) {
             document.getElementById('player-wrapper').style.display = 'block';
             document.getElementById('status-msg').innerText = "ASSISTINDO: " + name;
-
             if (player) { player.destroy(); }
-
             player = new Clappr.Player({
                 source: url,
                 parentId: "#player-wrapper",
                 width: '100%',
                 height: '100%',
                 autoPlay: true,
-                preload: 'auto',
-                mimeType: url.includes('.m3u8') ? 'application/x-mpegURL' : 'video/mp4',
                 plugins: [ClapprPip.PipButton, ClapprPip.PipPlugin],
-                playback: {
-                    hlsjsConfig: {
-                        enableWorker: true,
-                        lowLatencyMode: true,
-                        p2pConfig: { live: true }
-                    }
-                }
+                playback: { hlsjsConfig: { enableWorker: true, p2pConfig: { live: true } } }
             });
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -184,7 +205,6 @@
             const display = document.getElementById('channelDisplay');
             display.innerHTML = '';
             const filtered = allChannels.filter(c => c.group.toLowerCase() === currentCategory.toLowerCase());
-            
             filtered.forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'channel-item';
