@@ -14,13 +14,32 @@
         
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding-top: 135px; display: flex; flex-direction: column; align-items: center; }
         
+        /* CABEÇALHO COM BOTÕES ALINHADOS */
         .main-header { 
             position: fixed; top: 0; left: 0; width: 100%; background: var(--header-bg); 
             z-index: 1001; border-bottom: 2px solid #222; display: flex; 
             justify-content: space-between; align-items: center; padding: 12px 20px; box-sizing: border-box; 
         }
         .header-title { color: var(--primary); margin: 0; font-size: 18px; letter-spacing: 2px; font-weight: bold; text-transform: uppercase; }
-        .btn-privado-header { background: #111; color: var(--primary); border: 1px solid var(--primary); padding: 8px 15px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+
+        /* BOTÃO TELA CHEIA NO CABEÇALHO */
+        .btn-fs-header { 
+            background: #111; 
+            color: var(--primary); 
+            border: 1px solid var(--primary); 
+            width: 35px; 
+            height: 35px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 18px;
+        }
+
+        .btn-privado-header { background: #111; color: var(--primary); border: 1px solid var(--primary); padding: 8px 15px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; height: 35px; }
 
         /* BARRA DE GÊNEROS */
         .genre-bar { position: fixed; top: 60px; left: 0; width: 100%; background: #0d0d0d; z-index: 1000; padding: 12px 0; border-bottom: 1px solid #222; }
@@ -29,22 +48,6 @@
         
         .tab-btn { background: #222; color: #777; border: 1px solid #333; padding: 10px 22px; border-radius: 25px; cursor: pointer; font-weight: bold; white-space: nowrap; font-size: 13px; }
         .tab-btn.active { background: var(--primary); color: black; border-color: var(--primary); }
-
-        /* ABA PEQUENA DE TELA CHEIA (LADO ESQUERDO) */
-        .btn-fs-small { 
-            background: #1a1a1a; 
-            color: var(--primary); 
-            border: 1px solid #333; 
-            min-width: 40px; 
-            height: 38px; 
-            border-radius: 10px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            cursor: pointer; 
-            font-size: 18px;
-            flex-shrink: 0;
-        }
 
         /* PLAYER WRAPPER */
         .container { width: 95%; max-width: 850px; padding: 10px; }
@@ -55,7 +58,6 @@
             position: relative;
         }
         
-        /* Estilo para Fullscreen Nativo */
         #player-wrapper:fullscreen { border: none; border-radius: 0; width: 100vw; height: 100vh; }
         #player-wrapper:-webkit-full-screen { width: 100vw; height: 100vh; }
 
@@ -76,13 +78,14 @@
 
     <header class="main-header">
         <h1 class="header-title">APITV SCREEN</h1>
-        <button class="btn-privado-header" onclick="acessoSeguro()">USUÁRIO PRIVADO</button>
+        <div class="header-actions">
+            <button class="btn-fs-header" title="Tela Cheia" onclick="toggleFullScreen()">⛶</button>
+            <button class="btn-privado-header" onclick="acessoSeguro()">USUÁRIO PRIVADO</button>
+        </div>
     </header>
 
     <nav class="genre-bar">
         <div class="tabs-container">
-            <button class="btn-fs-small" title="Tela Cheia" onclick="toggleFullScreen()">⛶</button>
-            
             <button class="tab-btn active" onclick="switchTab('Vidyou tv Aberta', this)">Vidyou Tv Aberta</button>
             <button class="tab-btn" onclick="switchTab('Vidyou Variedades', this)">Vidyou Variedades</button>
             <button class="tab-btn" onclick="switchTab('Vidyou Kids', this)">Vidyou Kids</button>
@@ -225,4 +228,4 @@
         window.onload = loadCloud;
     </script>
 </body>
-</html>
+                </html>
