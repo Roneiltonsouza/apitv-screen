@@ -30,11 +30,12 @@
         .channel-item img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 10px; border-radius: 10px; background: #000; }
         .channel-item p { font-size: 11px; margin: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         #private-panel { display: none; background: #0f0f0f; padding: 30px; border-radius: 20px; border: 1px solid var(--primary); text-align: center; margin-top: 20px; }
-        input, select { width: 90%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 16px; outline: none; }
+        input, select { width: 90%; padding: 15px; margin: 12px 0; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 16px; outline: none; }
         .btn-play { background: var(--primary); color: black; border: none; padding: 18px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 95%; font-size: 14px; text-transform: uppercase; }
         .yt-manager-box { margin-top: 20px; text-align: left; background: #111; border-radius: 10px; padding: 10px; max-height: 250px; overflow-y: auto; border: 1px solid #222; }
         .yt-manager-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; font-size: 12px; }
         .yt-manager-actions span { margin-left: 12px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+        google-cast-launcher { display: none; }
     </style>
 </head>
 <body>
@@ -63,18 +64,33 @@
         <div id="channelDisplay" class="channel-grid"></div>
 
         <div id="private-panel">
-            <h3 style="color: var(--primary);">Painel Administrativo</h3>
-            <select id="ytCategory">
+            <h3 style="color: var(--primary);">Painel Cloud M3U8</h3>
+            <input type="text" id="listName" placeholder="Nome da Lista">
+            <input type="text" id="listUrl" placeholder="Link M3U8">
+            <button class="btn-play" onclick="saveAndSync()">ATUALIZAR TODOS OS APPS</button>
+            
+            <div id="active-list-info" style="display:none; margin-top: 20px;">
+                <span id="currentListName"></span><br><br>
+                <button style="color:red; background:none; border:none; cursor:pointer; font-weight:bold;" onclick="deleteList()">[ APAGAR NUVEM IPTV ]</button>
+            </div>
+
+            <hr style="border: 1px solid #222; margin: 30px 0;">
+
+            <h3 id="yt-form-title" style="color: #ff0000;">Gerenciar Conteúdo</h3>
+            <input type="hidden" id="ytEditId">
+            <select id="ytCategory" style="margin-bottom: 5px;">
                 <option value="Live YouTube">Live YouTube</option>
                 <option value="Filmes">Filmes</option>
             </select>
-            <input type="text" id="ytName" placeholder="Título">
+            <input type="text" id="ytName" placeholder="Nome do Canal/Filme">
             <input type="text" id="ytLogo" placeholder="Link da Logo">
-            <input type="text" id="ytUrl" placeholder="Link (YouTube ou BrStream)">
-            <button class="btn-play" style="background: var(--primary);" onclick="saveYoutube()">SALVAR CONTEÚDO</button>
+            <input type="text" id="ytUrl" placeholder="Link (YouTube ou Filme)">
+            <button id="btn-yt-save" class="btn-play" style="background: #ff0000; color: white;" onclick="saveYoutube()">SALVAR AGORA</button>
             <div class="yt-manager-box" id="yt-manager-list"></div>
         </div>
     </div>
+
+    <google-cast-launcher id="cast-trigger"></google-cast-launcher>
 
     <script>
         const API_KEY = "AIza58AfRp1KcBIxoobHdZ2gFzL4WesjLpWWTmB";
@@ -82,16 +98,16 @@
         const YT_URL = "https://netbase-cloud-default-rtdb.firebaseio.com/youtube";
         const ID_ACESSO = "netchaveapi";
         
-        let player, allChannels = [], ytChannels = [], currentCategory = 'Vidyou tv Aberta';
+        let player, allChannels = [], ytChannels = [], currentCategory = 'Vidyou tv Aberta', currentListId = null;
 
         function acessoSeguro() {
-            if (prompt("ID Único:") === ID_ACESSO) switchTab('privado', null);
+            if (prompt("ID Único:") === ID_ACESSO) switchTab('privado', document.querySelector('.btn-privado-header'));
         }
 
         function switchTab(category, btn) {
             currentCategory = category;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            if(btn) btn.classList.add('active');
+            if(category !== 'privado' && btn) btn.classList.add('active');
             document.getElementById('channelDisplay').style.display = category === 'privado' ? 'none' : 'grid';
             document.getElementById('private-panel').style.display = category === 'privado' ? 'block' : 'none';
             if(category !== 'privado') renderChannels();
@@ -105,26 +121,19 @@
 
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 let vid = url.split('v=')[1] || url.split('/').pop().split('?')[0];
+                if(url.includes('live/')) vid = url.split('live/')[1].split('?')[0];
                 container.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${vid}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
             } else {
-                // CORREÇÃO PARA O FORMATO BRSTREAM
-                let playerConfig = {
-                    source: url,
-                    parentId: "#player-wrapper",
-                    width: '100%',
-                    height: '100%',
-                    autoPlay: true,
-                    plugins: [ClapprPip]
-                };
-
-                // Se for o seu link especial, forçamos o tipo para HLS
-                if (url.includes('brstream.cc')) {
-                    playerConfig.mimeType = "application/x-mpegURL";
-                }
-
-                player = new Clappr.Player(playerConfig);
+                let config = { source: url, parentId: "#player-wrapper", width: '100%', height: '100%', autoPlay: true };
+                if (url.includes('brstream.cc')) { config.mimeType = "application/x-mpegURL"; }
+                player = new Clappr.Player(config);
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function saveAndSync() {
+            const n = document.getElementById('listName').value, u = document.getElementById('listUrl').value;
+            if (n && u) { await fetch(`${DB_URL}.json?auth=${API_KEY}`, { method: 'POST', body: JSON.stringify({ nome: n, url: u }) }); location.reload(); }
         }
 
         async function saveYoutube() {
@@ -141,15 +150,26 @@
             const data = await res.json();
             if (data) {
                 const keys = Object.keys(data);
-                parseM3U(data[keys[keys.length - 1]].url);
+                currentListId = keys[keys.length - 1];
+                document.getElementById('currentListName').innerText = "Lista IPTV Ativa: " + data[currentListId].nome;
+                document.getElementById('active-list-info').style.display = "block";
+                parseM3U(data[currentListId].url);
             }
             const resYt = await fetch(`${YT_URL}.json?auth=${API_KEY}`);
             const dataYt = await resYt.json();
+            const manager = document.getElementById('yt-manager-list');
             if (dataYt) {
                 ytChannels = Object.keys(dataYt).map(id => {
-                    return { ...dataYt[id], id };
+                    const c = dataYt[id];
+                    const cat = c.group || 'Live YouTube';
+                    manager.innerHTML += `<div class="yt-manager-item"><span>[${cat}] ${c.name}</span><div class="yt-manager-actions"><span style="color:#ff4444" onclick="deleteYt('${id}')">EXCLUIR</span></div></div>`;
+                    return { ...c, id, group: cat };
                 });
             }
+        }
+
+        async function deleteYt(id) {
+            if(confirm("Excluir?")) { await fetch(`${YT_URL}/${id}.json?auth=${API_KEY}`, { method: 'DELETE' }); location.reload(); }
         }
 
         async function parseM3U(url) {
@@ -172,7 +192,7 @@
             const display = document.getElementById('channelDisplay');
             display.innerHTML = '';
             let list = (currentCategory === 'Live YouTube' || currentCategory === 'Filmes') ? 
-                        ytChannels.filter(c => (c.group || 'Live YouTube') === currentCategory) : 
+                        ytChannels.filter(c => c.group === currentCategory) : 
                         allChannels.filter(c => c.group.toLowerCase() === currentCategory.toLowerCase());
 
             list.forEach(c => {
