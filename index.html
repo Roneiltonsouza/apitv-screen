@@ -66,9 +66,10 @@
         input, select { width: 90%; padding: 15px; margin: 12px 0; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 16px; outline: none; }
         .btn-play { background: var(--primary); color: black; border: none; padding: 18px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 95%; font-size: 14px; text-transform: uppercase; }
 
-        .yt-manager-box { margin-top: 20px; text-align: left; background: #111; border-radius: 10px; padding: 10px; max-height: 250px; overflow-y: auto; border: 1px solid #222; }
-        .yt-manager-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; font-size: 12px; }
-        
+        .yt-manager-box { margin-top: 20px; text-align: left; background: #111; border-radius: 10px; padding: 15px; max-height: 250px; overflow-y: auto; border: 1px solid #222; }
+        .yt-manager-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; font-size: 12px; color: #ccc; }
+        .btn-del { color: #ff4444; cursor: pointer; font-weight: bold; padding: 5px; border: 1px solid #ff4444; border-radius: 4px; font-size: 10px; }
+
         google-cast-launcher { display: none; }
     </style>
 </head>
@@ -106,6 +107,8 @@
             <input type="text" id="listUrl" placeholder="Link M3U8">
             <button class="btn-play" onclick="saveAndSync()">ATUALIZAR TODOS OS APPS</button>
             
+            <div id="m3u-manager-list" style="margin-top: 10px;"></div>
+
             <hr style="border: 1px solid #222; margin: 20px 0;">
             
             <h3 id="yt-form-title" style="color: #ff0000;">Gerenciar Conteúdo</h3>
@@ -178,7 +181,6 @@
             });
         }
 
-        // FUNÇÃO DE PLAYER ATUALIZADA E CORRIGIDA PARA BRSTREAM, M3U8 E MP4
         function iniciarPlayer(url, name) {
             const container = document.getElementById('player-wrapper');
             document.getElementById('twitch-container').style.display = 'none';
@@ -195,7 +197,6 @@
                 else vid = url.split('/').pop().split('?')[0];
                 container.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${vid}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
             } else {
-                // Força o mimeType se for BrStream ou M3U8 para garantir o carregamento
                 let mime = "application/x-mpegURL";
                 if(url.toLowerCase().includes(".mp4")) mime = "video/mp4";
 
@@ -212,6 +213,24 @@
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+
+        // --- FUNÇÕES DE EXCLUSÃO ---
+
+        async function excluirItemYoutube(id) {
+            if(confirm("Deseja excluir este item permanentemente?")) {
+                await fetch(`${YT_URL}/${id}.json?auth=${API_KEY}`, { method: 'DELETE' });
+                loadCloud();
+            }
+        }
+
+        async function excluirListaIPTV(id) {
+            if(confirm("Deseja remover esta lista IPTV da nuvem?")) {
+                await fetch(`${DB_URL}/${id}.json?auth=${API_KEY}`, { method: 'DELETE' });
+                location.reload();
+            }
+        }
+
+        // --- FIM EXCLUSÃO ---
 
         async function saveYoutube() {
             const data = {
@@ -236,16 +255,46 @@
         }
 
         async function loadCloud() {
+            // Gerenciamento de Listas IPTV
             const res = await fetch(`${DB_URL}.json?auth=${API_KEY}`);
             const data = await res.json();
+            const m3uBox = document.getElementById('m3u-manager-list');
+            m3uBox.innerHTML = '';
+            
             if (data) {
                 const keys = Object.keys(data);
                 currentListId = keys[keys.length - 1];
+                
+                // Exibir botão de apagar lista ativa
+                m3uBox.innerHTML = `
+                    <div class="yt-manager-item" style="border: 1px solid #333; padding: 10px; border-radius: 5px;">
+                        <span>Ativa: ${data[currentListId].name}</span>
+                        <span class="btn-del" onclick="excluirListaIPTV('${currentListId}')">APAGAR LISTA</span>
+                    </div>
+                `;
                 parseM3U(data[currentListId].url);
             }
+
+            // Gerenciamento de Conteúdo YouTube/Filmes
             const resYt = await fetch(`${YT_URL}.json?auth=${API_KEY}`);
             const dataYt = await resYt.json();
-            ytChannels = dataYt ? Object.keys(dataYt).map(id => ({ ...dataYt[id], id, group: dataYt[id].group || 'Live YouTube' })) : [];
+            const ytBox = document.getElementById('yt-manager-list');
+            ytBox.innerHTML = '<p style="font-size:10px; color:gray">LISTA DE ITENS SALVOS:</p>';
+            
+            ytChannels = [];
+            if(dataYt) {
+                Object.keys(dataYt).forEach(id => {
+                    const item = dataYt[id];
+                    ytChannels.push({ ...item, id, group: item.group || 'Live YouTube' });
+                    
+                    ytBox.innerHTML += `
+                        <div class="yt-manager-item">
+                            <span>[${item.group}] ${item.name}</span>
+                            <span class="btn-del" onclick="excluirItemYoutube('${id}')">EXCLUIR</span>
+                        </div>
+                    `;
+                });
+            }
             renderChannels();
         }
 
