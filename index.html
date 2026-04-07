@@ -8,11 +8,11 @@
     <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/cdnbye@latest/dist/hlsjs-p2p-engine.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/clappr-pip@latest/dist/clappr-pip.min.js"></script>
-    
     <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+    <script src="https://player.twitch.tv/js/embed/v1.js"></script>
 
     <style>
-        :root { --primary: #00ff88; --bg: #0a0a0a; --card: #161616; --header-bg: #000; }
+        :root { --primary: #00ff88; --bg: #0a0a0a; --card: #161616; --header-bg: #000; --twitch: #9146ff; }
         
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding-top: 135px; display: flex; flex-direction: column; align-items: center; }
         
@@ -39,16 +39,21 @@
         
         .tab-btn { background: #222; color: #777; border: 1px solid #333; padding: 10px 22px; border-radius: 25px; cursor: pointer; font-weight: bold; white-space: nowrap; font-size: 13px; }
         .tab-btn.active { background: var(--primary); color: black; border-color: var(--primary); }
+        .btn-twitch { border-color: var(--twitch); color: var(--twitch); }
+        .btn-twitch.active { background: var(--twitch); color: white; }
 
         .container { width: 95%; max-width: 850px; padding: 10px; }
-        #player-wrapper { 
+        
+        /* Wrappers de Vídeo */
+        #player-wrapper, #twitch-container { 
             width: 100%; background: #000; aspect-ratio: 16/9; 
             border-radius: 12px; border: 2px solid var(--primary); 
             box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; margin-bottom: 20px; display: none;
             position: relative;
         }
+        #twitch-container { border-color: var(--twitch); }
         
-        #player-wrapper:fullscreen { border: none; border-radius: 0; width: 100vw; height: 100vh; }
+        #player-wrapper:fullscreen, #twitch-container:fullscreen { border: none; border-radius: 0; width: 100vw; height: 100vh; }
 
         .channel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 15px; width: 100%; }
         .channel-item { background: var(--card); padding: 15px; border-radius: 12px; cursor: pointer; text-align: center; border: 1px solid #222; transition: 0.3s; }
@@ -62,7 +67,6 @@
         input, select { width: 90%; padding: 15px; margin: 12px 0; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 16px; outline: none; }
         .btn-play { background: var(--primary); color: black; border: none; padding: 18px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 95%; font-size: 14px; text-transform: uppercase; }
 
-        /* Estilos da Lista de Gerenciamento */
         .yt-manager-box { margin-top: 20px; text-align: left; background: #111; border-radius: 10px; padding: 10px; max-height: 250px; overflow-y: auto; border: 1px solid #222; }
         .yt-manager-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; font-size: 12px; }
         .yt-manager-actions span { margin-left: 12px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
@@ -82,6 +86,7 @@
 
     <nav class="genre-bar">
         <div class="tabs-container">
+            <button class="tab-btn btn-twitch" onclick="switchTab('Sinal Direto', this)">SINAL DIRETO (PRISM)</button>
             <button class="tab-btn" onclick="switchTab('Live YouTube', this)">Live YouTube</button>
             <button class="tab-btn" onclick="switchTab('Filmes', this)">Filmes</button>
             <button class="tab-btn active" onclick="switchTab('Vidyou tv Aberta', this)">Vidyou Tv Aberta</button>
@@ -92,7 +97,11 @@
 
     <div class="container">
         <div id="status-msg">Sincronizando Grade...</div>
+        
         <div id="player-wrapper"></div>
+        
+        <div id="twitch-container"></div>
+
         <div id="channelDisplay" class="channel-grid"></div>
 
         <div id="private-panel">
@@ -132,12 +141,11 @@
         const YT_URL = "https://netbase-cloud-default-rtdb.firebaseio.com/youtube";
         const ID_ACESSO = "netchaveapi";
         
-        let player, allChannels = [], ytChannels = [], currentCategory = 'Vidyou tv Aberta', currentListId = null;
-        let currentUrl = "", currentTitle = "";
+        let player, twitchPlayer, allChannels = [], ytChannels = [], currentCategory = 'Vidyou tv Aberta', currentListId = null;
 
         function toggleFullScreen() {
-            const playerElem = document.getElementById('player-wrapper');
-            if (playerElem.style.display === 'none') return alert("Dê play primeiro!");
+            const playerElem = document.fullscreenElement ? null : (document.getElementById('player-wrapper').style.display !== 'none' ? document.getElementById('player-wrapper') : document.getElementById('twitch-container'));
+            if (!playerElem && !document.fullscreenElement) return alert("Dê play primeiro!");
             if (!document.fullscreenElement) playerElem.requestFullscreen?.() || playerElem.webkitRequestFullscreen?.();
             else document.exitFullscreen();
         }
@@ -150,16 +158,46 @@
             currentCategory = category;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             if(category !== 'privado' && btn) btn.classList.add('active');
-            document.getElementById('channelDisplay').style.display = category === 'privado' ? 'none' : 'grid';
-            document.getElementById('private-panel').style.display = category === 'privado' ? 'block' : 'none';
-            if(category !== 'privado') renderChannels();
+            
+            const display = document.getElementById('channelDisplay');
+            const panel = document.getElementById('private-panel');
+            const twitchDiv = document.getElementById('twitch-container');
+            const playerDiv = document.getElementById('player-wrapper');
+
+            display.style.display = (category === 'privado' || category === 'Sinal Direto') ? 'none' : 'grid';
+            panel.style.display = category === 'privado' ? 'block' : 'none';
+            
+            if(category === 'Sinal Direto') {
+                playerDiv.style.display = 'none';
+                twitchDiv.style.display = 'block';
+                carregarTwitchManual();
+            } else if(category !== 'privado') {
+                twitchDiv.style.display = 'none';
+                renderChannels();
+            }
+        }
+
+        function carregarTwitchManual() {
+            document.getElementById('status-msg').innerText = "CONECTANDO AO SINAL PRISM...";
+            document.getElementById('twitch-container').innerHTML = ''; // Limpa para evitar duplicados
+            
+            twitchPlayer = new Twitch.Player("twitch-container", {
+                channel: "lexwelldy", // SEU USUÁRIO DA TWITCH AQUI
+                width: "100%",
+                height: "100%",
+                autoplay: true,
+                parent: ["localhost", "roneilton-souza.github.io"] // Ajuste para o seu domínio final
+            });
         }
 
         function iniciarPlayer(url, name) {
-            currentUrl = url; currentTitle = name;
             const container = document.getElementById('player-wrapper');
+            const twitchContainer = document.getElementById('twitch-container');
+            
+            twitchContainer.style.display = 'none';
             container.style.display = 'block';
             document.getElementById('status-msg').innerText = "ASSISTINDO: " + name;
+            
             if (player) player.destroy();
 
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
@@ -172,44 +210,9 @@
                     plugins: [ClapprPip.PipButton, ClapprPip.PipPlugin],
                     playback: { hlsjsConfig: { enableWorker: true } }
                 };
-                if (url.includes('brstream.cc')) config.mimeType = "application/x-mpegURL";
                 player = new Clappr.Player(config);
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        async function saveAndSync() {
-            const n = document.getElementById('listName').value, u = document.getElementById('listUrl').value;
-            if (n && u) { await fetch(`${DB_URL}.json?auth=${API_KEY}`, { method: 'POST', body: JSON.stringify({ nome: n, url: u }) }); location.reload(); }
-        }
-
-        async function saveYoutube() {
-            const n = document.getElementById('ytName').value, l = document.getElementById('ytLogo').value, 
-                  u = document.getElementById('ytUrl').value, c = document.getElementById('ytCategory').value,
-                  id = document.getElementById('ytEditId').value;
-            if (n && u) {
-                const method = id ? 'PUT' : 'POST';
-                const endpoint = id ? `${YT_URL}/${id}.json?auth=${API_KEY}` : `${YT_URL}.json?auth=${API_KEY}`;
-                await fetch(endpoint, { method: method, body: JSON.stringify({ name: n, logo: l, url: u, group: c }) });
-                location.reload();
-            }
-        }
-
-        function editYt(id, name, logo, url, group) {
-            document.getElementById('ytEditId').value = id;
-            document.getElementById('ytName').value = name;
-            document.getElementById('ytLogo').value = logo;
-            document.getElementById('ytUrl').value = url;
-            document.getElementById('ytCategory').value = group || "Live YouTube";
-            document.getElementById('yt-form-title').innerText = "EDITANDO CONTEÚDO";
-            document.getElementById('btn-yt-cancel').style.display = "block";
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function cancelYtEdit() { location.reload(); }
-
-        async function deleteYt(id) {
-            if(confirm("Excluir item permanentemente?")) { await fetch(`${YT_URL}/${id}.json?auth=${API_KEY}`, { method: 'DELETE' }); location.reload(); }
         }
 
         async function loadCloud() {
@@ -218,39 +221,35 @@
             if (data) {
                 const keys = Object.keys(data);
                 currentListId = keys[keys.length - 1];
-                document.getElementById('currentListName').innerText = "Ativa: " + data[currentListId].nome;
                 document.getElementById('active-list-info').style.display = "block";
                 parseM3U(data[currentListId].url);
             }
             
             const resYt = await fetch(`${YT_URL}.json?auth=${API_KEY}`);
             const dataYt = await resYt.json();
-            const manager = document.getElementById('yt-manager-list');
-            manager.innerHTML = '';
             if (dataYt) {
                 ytChannels = Object.keys(dataYt).map(id => {
-                    const c = dataYt[id];
-                    const cat = c.group || 'Live YouTube';
-                    manager.innerHTML += `<div class="yt-manager-item"><span>[${cat}] ${c.name}</span><div class="yt-manager-actions"><span style="color:#007bff" onclick="editYt('${id}','${c.name}','${c.logo}','${c.url}','${c.group}')">EDITAR</span><span style="color:#ff4444" onclick="deleteYt('${id}')">X</span></div></div>`;
-                    return { ...c, id, group: cat };
+                    return { ...dataYt[id], id, group: dataYt[id].group || 'Live YouTube' };
                 });
             }
         }
 
         async function parseM3U(url) {
-            const response = await fetch(url);
-            const text = await response.text(), lines = text.split('\n');
-            allChannels = [];
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].includes('#EXTINF:')) {
-                    const name = lines[i].split(',')[1]?.trim();
-                    const sUrl = lines[i+1]?.trim();
-                    const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "";
-                    const group = lines[i].match(/group-title="([^"]+)"/)?.[1]?.replace(/\r?\n|\r/g, " ").trim() || "";
-                    if(sUrl?.startsWith('http')) allChannels.push({ name, url: sUrl, logo, group });
+            try {
+                const response = await fetch(url);
+                const text = await response.text(), lines = text.split('\n');
+                allChannels = [];
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].includes('#EXTINF:')) {
+                        const name = lines[i].split(',')[1]?.trim();
+                        const sUrl = lines[i+1]?.trim();
+                        const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "";
+                        const group = lines[i].match(/group-title="([^"]+)"/)?.[1]?.trim() || "";
+                        if(sUrl?.startsWith('http')) allChannels.push({ name, url: sUrl, logo, group });
+                    }
                 }
-            }
-            renderChannels();
+                renderChannels();
+            } catch(e) { document.getElementById('status-msg').innerText = "Erro ao carregar M3U"; }
         }
 
         function renderChannels() {
@@ -270,11 +269,7 @@
             document.getElementById('status-msg').innerText = "Grade Sincronizada";
         }
 
-        async function deleteList() {
-            if (currentListId && confirm("Apagar lista Cloud?")) { await fetch(`${DB_URL}/${currentListId}.json?auth=${API_KEY}`, { method: 'DELETE' }); location.reload(); }
-        }
-
         window.onload = loadCloud;
     </script>
 </body>
-</html>
+                </html>
