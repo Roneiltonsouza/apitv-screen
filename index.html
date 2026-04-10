@@ -26,7 +26,7 @@
             overflow-x: hidden;
         }
         
-        /* HEADER E CONTROLES */
+        /* HEADER E CONTROLES ORIGINAIS */
         .main-header { 
             position: fixed; top: 0; left: 0; width: 100%; 
             background: rgba(0, 0, 0, 0.98); z-index: 1001; 
@@ -61,7 +61,6 @@
             text-transform: uppercase; color: white; cursor: pointer;
         }
 
-        /* POPUP DE GÊNEROS */
         #genre-popup {
             display: none; position: fixed; top: 135px; left: 50%; transform: translateX(-50%);
             background: rgba(10, 10, 10, 0.98); border: 1px solid #333; 
@@ -71,13 +70,12 @@
         .popup-item { padding: 14px; border-bottom: 1px solid #222; cursor: pointer; font-size: 13px; font-weight: bold; color: #eee; text-align: center; }
         .popup-item:active { background: #333; }
 
-        /* PLAYER E GRID - BORDAS CORRIGIDAS AQUI */
         #player-wrapper, #twitch-container { 
             width: 100%; aspect-ratio: 16/9; border-radius: 12px; 
             margin-bottom: 20px; display: none; background: #000; 
-            border: 1px solid #333; /* Removido o verde e adicionado cinza escuro discreto */
+            border: 1px solid #333; 
             position: relative; overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* Sombra neutra */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
         }
 
         .container { width: 95%; max-width: 900px; padding-bottom: 50px; }
@@ -85,8 +83,10 @@
         .channel-item { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #222; cursor: pointer; }
         .channel-item img { width: 60px; height: 60px; object-fit: contain; border-radius: 8px; margin-bottom: 5px; background: #000;}
         .channel-item p { font-size: 11px; margin: 0; color: #ccc; font-weight: 500; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        
+        /* TAG DO CANAL (YouTube Style) */
+        .channel-author { font-size: 8px; color: var(--premium); font-weight: bold; display: block; margin-top: 2px; }
 
-        /* PAINÉIS ADM */
         #auth-panel, #private-panel { 
             display: none; background: #0f0f0f; padding: 25px; 
             border-radius: 20px; border: 1px solid var(--primary); margin-top: 10px; text-align: center;
@@ -101,7 +101,6 @@
 
         #status-msg { font-size: 10px; color: var(--primary); font-weight: bold; text-align: center; margin-bottom: 10px; text-transform: uppercase; }
         .yt-manager-box { margin-top: 20px; text-align: left; background: #111; border-radius: 10px; padding: 10px; max-height: 200px; overflow-y: auto; border: 1px solid #222; }
-        .yt-manager-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #222; font-size: 11px; color: #aaa; }
     </style>
 </head>
 <body>
@@ -147,12 +146,19 @@
                 <h2 style="color: var(--premium);">Painel de Postagem</h2>
                 <input type="text" id="regName" placeholder="Seu Nome">
                 <input type="email" id="regEmail" placeholder="Seu E-mail">
-                <button class="btn-action" style="background:var(--premium)" id="btnSolicitar" onclick="solicitarAcesso()">SOLICITAR ACESSO</button>
+                <button class="btn-action" style="background:var(--premium)" onclick="solicitarAcesso()">SOLICITAR ACESSO</button>
                 <hr style="border: 1px solid #222; margin: 20px 0;">
                 <input type="text" id="idLogin" placeholder="Digite seu ID">
                 <button class="btn-action" style="background:var(--primary)" onclick="logarPostagem()">ENTRAR NO PAINEL</button>
             </div>
+            
             <div id="post-area" style="display:none;">
+                <h3 style="color: var(--premium);">Editar Canal / Perfil</h3>
+                <input type="text" id="cName" placeholder="Nome do Canal (Ex: Canal VIP)">
+                <input type="text" id="cPhoto" placeholder="Link da Foto do Canal">
+                <button class="btn-action" style="background:#222; color:white; font-size:12px" onclick="salvarCanal()">ATUALIZAR PERFIL</button>
+                
+                <hr style="border: 1px solid #222; margin: 20px 0;">
                 <h3 style="color: var(--primary);">Publicar em REVE FILMES</h3>
                 <input type="text" id="pName" placeholder="Nome do Filme">
                 <input type="text" id="pLogo" placeholder="Link da Capa">
@@ -162,155 +168,61 @@
         </div>
 
         <div id="private-panel">
-            <h3 style="color: var(--led-blue);">Imagem do Cabeçalho</h3>
-            <input type="text" id="headerUrlInput" placeholder="Link da Imagem (JPG/PNG)">
-            <button class="btn-action" style="background:var(--led-blue); color:black" onclick="saveHeaderImg()">SALVAR CABEÇALHO</button>
-            <hr style="border: 1px solid #222; margin: 20px 0;">
             <h3 style="color: var(--primary);">Painel Cloud M3U8</h3>
-            <input type="text" id="listName" placeholder="Nome da Lista">
             <input type="text" id="listUrl" placeholder="Link M3U8">
-            <button class="btn-action" style="background:var(--primary)" onclick="saveAndSync()">ATUALIZAR LISTA M3U</button>
-            <hr style="border: 1px solid #222; margin: 20px 0;">
-            <select id="ytCategory">
-                <option value="Live YouTube">Live YouTube</option>
-                <option value="Filmes">Filmes</option>
-                <option value="Reve Filmes">Reve Filmes</option>
-            </select>
-            <input type="text" id="ytName" placeholder="Nome do Conteúdo">
-            <input type="text" id="ytLogo" placeholder="Link da Logo/Capa">
-            <input type="text" id="ytUrl" placeholder="Link (YT ou MP4)">
-            <button class="btn-action" style="background:#ff0000; color:white" onclick="saveYoutube()">SALVAR NO FIREBASE</button>
-            <div class="yt-manager-box" id="yt-manager-list"></div>
+            <button class="btn-action" style="background:var(--primary)" onclick="saveAndSync()">ATUALIZAR LISTA</button>
         </div>
     </div>
 
     <script>
         const API_KEY = "AIza58AfRp1KcBIxoobHdZ2gFzL4WesjLpWWTmB";
-        const DB_URL = "https://netbase-cloud-default-rtdb.firebaseio.com/listas";
-        const YT_URL = "https://netbase-cloud-default-rtdb.firebaseio.com/youtube";
-        const VISUAL_URL = "https://netbase-cloud-default-rtdb.firebaseio.com/visual";
+        const BASE_URL = "https://netbase-cloud-default-rtdb.firebaseio.com";
         const ID_ACESSO = "netchaveapi";
-        
-        let player, allChannels = [], ytChannels = [], currentCategory = 'Vidyou tv Aberta';
-
-        function togglePopup() {
-            const p = document.getElementById('genre-popup');
-            p.style.display = (p.style.display === 'block') ? 'none' : 'block';
-        }
-
-        function toggleFullScreen() {
-            const el = document.getElementById('player-wrapper');
-            if(el.style.display === 'block') {
-                if (el.requestFullscreen) el.requestFullscreen();
-                else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-            } else { alert("Dê play em um canal primeiro!"); }
-        }
-
-        async function saveHeaderImg() {
-            const url = document.getElementById('headerUrlInput').value;
-            if(!url) return alert("Insira o link!");
-            await fetch(`${VISUAL_URL}.json?auth=${API_KEY}`, { method: 'PUT', body: JSON.stringify({img: url}) });
-            document.getElementById('headerPrincipal').style.backgroundImage = `url('${url}')`;
-            alert("Sucesso!");
-        }
-
-        function comandoAtalho() {
-            const btn = document.getElementById('ledArrow');
-            btn.classList.add('led-active');
-            document.getElementById('genre-popup').style.display = 'none';
-            switchTab('Vidyou tv Aberta');
-            setTimeout(() => {
-                const alvo = allChannels.find(c => c.group.toLowerCase().trim().includes('tv aberta'));
-                if(alvo) iniciarPlayer(alvo.url, alvo.name);
-                btn.classList.remove('led-active');
-            }, 500);
-        }
-
-        function switchTab(cat) {
-            currentCategory = cat;
-            document.getElementById('genre-popup').style.display = 'none';
-            document.getElementById('channelDisplay').style.display = (['privado', 'auth', 'Sinal Direto'].includes(cat)) ? 'none' : 'grid';
-            document.getElementById('private-panel').style.display = (cat === 'privado') ? 'block' : 'none';
-            document.getElementById('auth-panel').style.display = (cat === 'auth') ? 'block' : 'none';
-            
-            if(cat === 'Sinal Direto') {
-                document.getElementById('player-wrapper').style.display = 'none';
-                document.getElementById('twitch-container').style.display = 'block';
-                document.getElementById('twitch-container').innerHTML = '';
-                new Twitch.Player("twitch-container", { channel: "lexwelldy", width: "100%", height: "100%", autoplay: true });
-            } else if(!['privado', 'auth'].includes(cat)) {
-                document.getElementById('twitch-container').style.display = 'none';
-                renderChannels();
-            }
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        }
+        let player, allChannels = [], ytChannels = [], currentCategory = 'Vidyou tv Aberta', userLogado = null;
 
         async function loadCloud() {
             try {
-                const resVis = await fetch(`${VISUAL_URL}.json?auth=${API_KEY}`);
-                const dataVis = await resVis.json();
-                if(dataVis && dataVis.img) {
-                    const head = document.getElementById('headerPrincipal');
-                    head.style.backgroundImage = `url('${dataVis.img}')`;
-                    head.style.backgroundBlendMode = "overlay";
-                    head.style.backgroundColor = "rgba(0,0,0,0.5)";
-                }
-
-                const res = await fetch(`${DB_URL}.json?auth=${API_KEY}`);
+                const res = await fetch(`${BASE_URL}/listas.json?auth=${API_KEY}`);
                 const data = await res.json();
-                if (data) {
-                    const lastKey = Object.keys(data).pop();
-                    await parseM3U(data[lastKey].url);
-                }
+                if (data) { const last = Object.keys(data).pop(); await parseM3U(data[last].url); }
                 
-                const resYt = await fetch(`${YT_URL}.json?auth=${API_KEY}`);
+                const resYt = await fetch(`${BASE_URL}/youtube.json?auth=${API_KEY}`);
                 const dataYt = await resYt.json();
-                const ytBox = document.getElementById('yt-manager-list');
-                ytBox.innerHTML = ''; ytChannels = [];
-                if(dataYt) {
-                    Object.keys(dataYt).forEach(id => {
-                        ytChannels.push({ ...dataYt[id], id, group: dataYt[id].group || 'Live YouTube' });
-                        ytBox.innerHTML += `<div class="yt-manager-item"><span>${dataYt[id].name}</span><span style="color:red;cursor:pointer;font-weight:bold" onclick="excluirYt('${id}')">X</span></div>`;
-                    });
-                }
+                ytChannels = [];
+                if(dataYt) Object.keys(dataYt).forEach(id => { ytChannels.push({...dataYt[id], id}); });
                 renderChannels();
             } catch(e) { console.log(e); }
         }
 
         async function parseM3U(url) {
-            try {
-                const response = await fetch(url);
-                const text = await response.text();
-                const lines = text.split('\n');
-                allChannels = [];
-                for (let i = 0; i < lines.length; i++) {
-                    if (lines[i].includes('#EXTINF:')) {
-                        const name = lines[i].split(',')[1]?.trim();
-                        const sUrl = lines[i+1]?.trim();
-                        const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "";
-                        const group = lines[i].match(/group-title="([^"]+)"/)?.[1]?.trim() || "";
-                        if(sUrl && sUrl.startsWith('http')) allChannels.push({ name, url: sUrl, logo, group });
-                    }
+            const resp = await fetch(url);
+            const text = await resp.text();
+            const lines = text.split('\n');
+            allChannels = [];
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].includes('#EXTINF:')) {
+                    const name = lines[i].split(',')[1]?.trim();
+                    const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "";
+                    const group = lines[i].match(/group-title="([^"]+)"/)?.[1]?.trim() || "";
+                    allChannels.push({ name, url: lines[i+1]?.trim(), logo, group });
                 }
-                renderChannels();
-            } catch(e) { console.log(e); }
+            }
         }
 
         function renderChannels() {
             const display = document.getElementById('channelDisplay');
             display.innerHTML = '';
-            const searchTag = currentCategory.toLowerCase().trim();
-            let list = (['live youtube', 'filmes', 'reve filmes'].includes(searchTag)) 
-                ? ytChannels.filter(c => c.group.toLowerCase().trim() === searchTag) 
-                : allChannels.filter(c => c.group.toLowerCase().includes(searchTag));
-
-            if(list.length === 0) display.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#555">Grade vazia.</p>';
+            const search = currentCategory.toLowerCase().trim();
+            let list = (['live youtube', 'filmes', 'reve filmes'].includes(search)) 
+                ? ytChannels.filter(c => c.group.toLowerCase() === search) 
+                : allChannels.filter(c => c.group.toLowerCase().includes(search));
 
             list.forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'channel-item';
                 div.onclick = () => iniciarPlayer(c.url, c.name);
-                div.innerHTML = `<img src="${c.logo || 'https://via.placeholder.com/70'}"><p>${c.name}</p>`;
+                let author = (c.group === 'Reve Filmes' && c.channelName) ? `<span class="channel-author">${c.channelName}</span>` : '';
+                div.innerHTML = `<img src="${c.logo || 'https://via.placeholder.com/70'}"><p>${c.name}</p>${author}`;
                 display.appendChild(div);
             });
         }
@@ -318,69 +230,57 @@
         function iniciarPlayer(url, name) {
             const container = document.getElementById('player-wrapper');
             container.style.display = 'block';
-            document.getElementById('status-msg').innerText = "ASSISTINDO: " + name;
             if (player) player.destroy();
             container.innerHTML = "";
-
-            if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('/live/')) {
-                let vid = "";
-                if(url.includes('v=')) vid = url.split('v=')[1].split('&')[0];
-                else if(url.includes('live/')) vid = url.split('live/')[1].split('?')[0];
-                else vid = url.split('/').pop().split('?')[0];
-                container.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${vid}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-            } else {
-                let isDirect = url.toLowerCase().includes(".mp4") || url.toLowerCase().includes(".mkv") || url.includes("google");
-                player = new Clappr.Player({ 
-                    source: url, parentId: "#player-wrapper", width: '100%', height: '100%', autoPlay: true,
-                    mimeType: isDirect ? "video/mp4" : "application/x-mpegURL",
-                    plugins: [ClapprPip.PipButton, ClapprPip.PipPlugin],
-                    mediacontrol: {seekbar: "#00ff88", buttons: "#ffffff"}
-                });
-            }
+            player = new Clappr.Player({ source: url, parentId: "#player-wrapper", width: '100%', height: '100%', autoPlay: true });
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function acessoSeguro() { if (prompt("PIN ADM:") === ID_ACESSO) switchTab('privado'); }
-        async function saveAndSync() {
-            const name = document.getElementById('listName').value, url = document.getElementById('listUrl').value;
-            if(!url) return alert("Insira o link!");
-            await fetch(`${DB_URL}.json?auth=${API_KEY}`, { method: 'POST', body: JSON.stringify({name, url}) });
-            alert("Lista OK!"); loadCloud();
-        }
-        async function saveYoutube() {
-            const data = { name: document.getElementById('ytName').value, url: document.getElementById('ytUrl').value, logo: document.getElementById('ytLogo').value, group: document.getElementById('ytCategory').value };
-            if(!data.url) return alert("Link Vazio!");
-            await fetch(`${YT_URL}.json?auth=${API_KEY}`, { method: 'POST', body: JSON.stringify(data) });
-            alert("Salvo!"); loadCloud();
-        }
-        async function excluirYt(id) { if(confirm("Excluir?")) { await fetch(`${YT_URL}/${id}.json?auth=${API_KEY}`, { method: 'DELETE' }); loadCloud(); } }
-        
         async function solicitarAcesso() {
-            const nome = document.getElementById('regName').value, email = document.getElementById('regEmail').value;
-            if(!nome || !email.includes("@")) return alert("Dados inválidos.");
+            const nome = document.getElementById('regName').value;
             const pin = Math.floor(1000 + Math.random() * 9000);
             const idGerado = nome.substring(0,3).toUpperCase() + pin;
-            await fetch(`https://netbase-cloud-default-rtdb.firebaseio.com/usuarios_premium/${pin}.json?auth=${API_KEY}`, { method: 'PUT', body: JSON.stringify({ nome, email, id: idGerado }) });
-            window.open(`https://wa.me/5588988088578?text=Meu ID de Postagem: ${idGerado}`, '_blank');
+            await fetch(`${BASE_URL}/usuarios_premium/${pin}.json?auth=${API_KEY}`, { method: 'PUT', body: JSON.stringify({ nome, id: idGerado, channelName: nome }) });
+            alert("Seu ID: " + idGerado);
         }
 
         async function logarPostagem() {
             const id = document.getElementById('idLogin').value;
-            const res = await fetch(`https://netbase-cloud-default-rtdb.firebaseio.com/usuarios_premium.json?auth=${API_KEY}`);
+            const res = await fetch(`${BASE_URL}/usuarios_premium.json?auth=${API_KEY}`);
             const users = await res.json();
-            let valid = false;
-            if(users) Object.keys(users).forEach(k => { if(users[k].id === id) valid = true; });
-            if(valid) { document.getElementById('auth-card').style.display = 'none'; document.getElementById('post-area').style.display = 'block'; }
-            else alert("ID INVÁLIDO!");
+            if(users) Object.keys(users).forEach(k => { 
+                if(users[k].id === id) {
+                    userLogado = { ...users[k], key: k };
+                    document.getElementById('auth-card').style.display = 'none';
+                    document.getElementById('post-area').style.display = 'block';
+                    document.getElementById('cName').value = userLogado.channelName || userLogado.nome;
+                }
+            });
+        }
+
+        async function salvarCanal() {
+            const name = document.getElementById('cName').value;
+            const photo = document.getElementById('cPhoto').value;
+            await fetch(`${BASE_URL}/usuarios_premium/${userLogado.key}.json?auth=${API_KEY}`, { method: 'PATCH', body: JSON.stringify({ channelName: name, channelPhoto: photo }) });
+            userLogado.channelName = name;
+            alert("Perfil Atualizado!");
         }
 
         async function postarFilmePublico() {
-            const data = { name: document.getElementById('pName').value, url: document.getElementById('pUrl').value, logo: document.getElementById('pLogo').value, group: 'Reve Filmes' };
-            if(!data.name || !data.url) return alert("Preencha tudo!");
-            await fetch(`${YT_URL}.json?auth=${API_KEY}`, { method: 'POST', body: JSON.stringify(data) });
+            const data = { 
+                name: document.getElementById('pName').value, 
+                url: document.getElementById('pUrl').value, 
+                logo: document.getElementById('pLogo').value, 
+                group: 'Reve Filmes',
+                channelName: userLogado.channelName || userLogado.nome
+            };
+            await fetch(`${BASE_URL}/youtube.json?auth=${API_KEY}`, { method: 'POST', body: JSON.stringify(data) });
             alert("Postado!"); loadCloud();
         }
 
+        function switchTab(cat) { currentCategory = cat; document.getElementById('auth-panel').style.display = (cat === 'auth') ? 'block' : 'none'; renderChannels(); }
+        function acessoSeguro() { if(prompt("PIN:") === ID_ACESSO) document.getElementById('private-panel').style.display='block'; }
+        function togglePopup() { const p = document.getElementById('genre-popup'); p.style.display = (p.style.display === 'block') ? 'none' : 'block'; }
         window.onload = loadCloud;
     </script>
 </body>
