@@ -11,11 +11,8 @@
 
     <style>
         :root { 
-            --bg: #050505; 
-            --card: #121212; 
-            --led-blue: #00ccff;
-            --primary: #00ff88;
-            --premium: #ff9900;
+            --bg: #050505; --card: #121212; --led-blue: #00ccff;
+            --primary: #00ff88; --premium: #ff9900;
             --grad-text: linear-gradient(90deg, #ff0000 0%, #ffffff 35%, #800080 65%, #ffa500 100%);
             --grad-border: linear-gradient(45deg, #ff0000, #ffffff, #800080, #ffa500);
         }
@@ -26,7 +23,6 @@
             overflow-x: hidden;
         }
         
-        /* HEADER E CONTROLES ORIGINAIS */
         .main-header { 
             position: fixed; top: 0; left: 0; width: 100%; 
             background: rgba(0, 0, 0, 0.98); z-index: 1001; 
@@ -68,14 +64,11 @@
             width: 85%; max-width: 320px; box-shadow: 0 10px 40px #000;
         }
         .popup-item { padding: 14px; border-bottom: 1px solid #222; cursor: pointer; font-size: 13px; font-weight: bold; color: #eee; text-align: center; }
-        .popup-item:active { background: #333; }
 
         #player-wrapper, #twitch-container { 
             width: 100%; aspect-ratio: 16/9; border-radius: 12px; 
             margin-bottom: 20px; display: none; background: #000; 
-            border: 1px solid #333; 
-            position: relative; overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            border: 1px solid #333; position: relative; overflow: hidden;
         }
 
         .container { width: 95%; max-width: 900px; padding-bottom: 50px; }
@@ -83,9 +76,6 @@
         .channel-item { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #222; cursor: pointer; }
         .channel-item img { width: 60px; height: 60px; object-fit: contain; border-radius: 8px; margin-bottom: 5px; background: #000;}
         .channel-item p { font-size: 11px; margin: 0; color: #ccc; font-weight: 500; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-        
-        /* TAG DO CANAL (YouTube Style) */
-        .channel-author { font-size: 8px; color: var(--premium); font-weight: bold; display: block; margin-top: 2px; }
 
         #auth-panel, #private-panel { 
             display: none; background: #0f0f0f; padding: 25px; 
@@ -97,10 +87,9 @@
         .btn-header { background: #111; border-radius: 6px; font-size: 10px; font-weight: bold; padding: 10px 12px; cursor: pointer; }
         .btn-post-header { color: var(--premium); border: 1px solid var(--premium); }
         .btn-privado-header { color: var(--primary); border: 1px solid var(--primary); }
-        .btn-fullscreen-header { color: #fff; border: 1px solid #444; font-size: 8px; padding: 4px 8px; margin-top: 4px; display: block; width: 100%; text-align: center;}
 
-        #status-msg { font-size: 10px; color: var(--primary); font-weight: bold; text-align: center; margin-bottom: 10px; text-transform: uppercase; }
-        .yt-manager-box { margin-top: 20px; text-align: left; background: #111; border-radius: 10px; padding: 10px; max-height: 200px; overflow-y: auto; border: 1px solid #222; }
+        .yt-manager-box { margin-top: 20px; text-align: left; background: #111; border-radius: 10px; padding: 10px; border: 1px solid #222; max-height: 200px; overflow-y: auto; }
+        .yt-manager-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #222; font-size: 11px; color: #aaa; }
     </style>
 </head>
 <body>
@@ -117,10 +106,7 @@
             </div>
             <div class="header-actions" style="display:flex; gap:10px">
                 <button class="btn-header btn-post-header" onclick="switchTab('auth')">POST FILMES</button>
-                <div style="display: flex; flex-direction: column;">
-                    <button class="btn-header btn-privado-header" onclick="acessoSeguro()">PRIVADO</button>
-                    <button class="btn-fullscreen-header btn-header" onclick="toggleFullScreen()">📺 TELA CHEIA</button>
-                </div>
+                <button class="btn-header btn-privado-header" onclick="acessoSeguro()">PRIVADO</button>
             </div>
         </div>
     </header>
@@ -128,17 +114,13 @@
     <div id="genre-popup">
         <div class="popup-item" onclick="switchTab('Vidyou tv Aberta')">VIDYOU TV ABERTA</div>
         <div class="popup-item" onclick="switchTab('Vidyou Variedades')">VIDYOU VARIEDADES</div>
-        <div class="popup-item" onclick="switchTab('Vidyou Kids')">VIDYOU KIDS</div>
-        <div class="popup-item" onclick="switchTab('Sinal Direto')">SINAL DIRETO (PRISM)</div>
         <div class="popup-item" onclick="switchTab('Reve Filmes')">REVE FILMES</div>
         <div class="popup-item" onclick="switchTab('Live YouTube')">LIVE YOUTUBE</div>
         <div class="popup-item" onclick="switchTab('Filmes')">FILMES</div>
     </div>
 
     <div class="container">
-        <div id="status-msg">Sincronizando Grade...</div>
         <div id="player-wrapper"></div>
-        <div id="twitch-container"></div>
         <div id="channelDisplay" class="channel-grid"></div>
 
         <div id="auth-panel">
@@ -149,26 +131,19 @@
                 <button class="btn-action" style="background:var(--premium)" onclick="solicitarAcesso()">SOLICITAR ACESSO</button>
                 <hr style="border: 1px solid #222; margin: 20px 0;">
                 <input type="text" id="idLogin" placeholder="Digite seu ID">
-                <button class="btn-action" style="background:var(--primary)" onclick="logarPostagem()">ENTRAR NO PAINEL</button>
+                <button class="btn-action" style="background:var(--primary)" onclick="logarPostagem()">ENTRAR</button>
             </div>
-            
             <div id="post-area" style="display:none;">
-                <h3 style="color: var(--premium);">Editar Canal / Perfil</h3>
-                <input type="text" id="cName" placeholder="Nome do Canal (Ex: Canal VIP)">
-                <input type="text" id="cPhoto" placeholder="Link da Foto do Canal">
-                <button class="btn-action" style="background:#222; color:white; font-size:12px" onclick="salvarCanal()">ATUALIZAR PERFIL</button>
-                
-                <hr style="border: 1px solid #222; margin: 20px 0;">
                 <h3 style="color: var(--primary);">Publicar em REVE FILMES</h3>
                 <input type="text" id="pName" placeholder="Nome do Filme">
                 <input type="text" id="pLogo" placeholder="Link da Capa">
                 <input type="text" id="pUrl" placeholder="Link do Filme">
                 <button class="btn-action" style="background:var(--primary)" onclick="postarFilmePublico()">POSTAR AGORA</button>
+                <div class="yt-manager-box" id="meus-posts-lista"></div>
             </div>
         </div>
 
         <div id="private-panel">
-            <h3 style="color: var(--primary);">Painel Cloud M3U8</h3>
             <input type="text" id="listUrl" placeholder="Link M3U8">
             <button class="btn-action" style="background:var(--primary)" onclick="saveAndSync()">ATUALIZAR LISTA</button>
         </div>
@@ -176,31 +151,37 @@
 
     <script>
         const API_KEY = "AIza58AfRp1KcBIxoobHdZ2gFzL4WesjLpWWTmB";
-        const BASE_URL = "https://netbase-cloud-default-rtdb.firebaseio.com";
-        const ID_ACESSO = "netchaveapi";
-        let player, allChannels = [], ytChannels = [], currentCategory = 'Vidyou tv Aberta', userLogado = null;
+        const YT_URL = "https://netbase-cloud-default-rtdb.firebaseio.com/youtube";
+        const DB_URL = "https://netbase-cloud-default-rtdb.firebaseio.com/listas";
+        const USER_URL = "https://netbase-cloud-default-rtdb.firebaseio.com/usuarios_premium";
+        
+        let player, allChannels = [], ytChannels = [], currentCategory = 'Vidyou tv Aberta', userIDLogado = null;
 
         async function loadCloud() {
             try {
-                const res = await fetch(`${BASE_URL}/listas.json?auth=${API_KEY}`);
-                const data = await res.json();
-                if (data) { const last = Object.keys(data).pop(); await parseM3U(data[last].url); }
-                
-                const resYt = await fetch(`${BASE_URL}/youtube.json?auth=${API_KEY}`);
-                const dataYt = await resYt.json();
+                // Carrega M3U
+                const resM3u = await fetch(`${DB_URL}.json?auth=${API_KEY}`);
+                const dM = await resM3u.json();
+                if(dM) await parseM3U(Object.values(dM).pop().url);
+
+                // Carrega YouTube
+                const resYt = await fetch(`${YT_URL}.json?auth=${API_KEY}`);
+                const dY = await resYt.json();
                 ytChannels = [];
-                if(dataYt) Object.keys(dataYt).forEach(id => { ytChannels.push({...dataYt[id], id}); });
+                if(dY) Object.keys(dY).forEach(id => ytChannels.push({...dY[id], id}));
+                
                 renderChannels();
-            } catch(e) { console.log(e); }
+                if(userIDLogado) listarExclusao();
+            } catch(e) { console.error(e); }
         }
 
         async function parseM3U(url) {
-            const resp = await fetch(url);
-            const text = await resp.text();
-            const lines = text.split('\n');
+            const r = await fetch(url);
+            const t = await r.text();
+            const lines = t.split('\n');
             allChannels = [];
             for (let i = 0; i < lines.length; i++) {
-                if (lines[i].includes('#EXTINF:')) {
+                if (lines[i].startsWith('#EXTINF:')) {
                     const name = lines[i].split(',')[1]?.trim();
                     const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "";
                     const group = lines[i].match(/group-title="([^"]+)"/)?.[1]?.trim() || "";
@@ -212,58 +193,34 @@
         function renderChannels() {
             const display = document.getElementById('channelDisplay');
             display.innerHTML = '';
-            const search = currentCategory.toLowerCase().trim();
-            let list = (['live youtube', 'filmes', 'reve filmes'].includes(search)) 
-                ? ytChannels.filter(c => c.group.toLowerCase() === search) 
-                : allChannels.filter(c => c.group.toLowerCase().includes(search));
+            const searchTag = currentCategory.toLowerCase().trim();
+            
+            let list = (['live youtube', 'filmes', 'reve filmes'].includes(searchTag)) 
+                ? ytChannels.filter(c => (c.group || '').toLowerCase() === searchTag) 
+                : allChannels.filter(c => (c.group || '').toLowerCase().includes(searchTag));
 
             list.forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'channel-item';
                 div.onclick = () => iniciarPlayer(c.url, c.name);
-                let author = (c.group === 'Reve Filmes' && c.channelName) ? `<span class="channel-author">${c.channelName}</span>` : '';
-                div.innerHTML = `<img src="${c.logo || 'https://via.placeholder.com/70'}"><p>${c.name}</p>${author}`;
+                div.innerHTML = `<img src="${c.logo || 'https://via.placeholder.com/70'}"><p>${c.name}</p>`;
                 display.appendChild(div);
             });
         }
 
-        function iniciarPlayer(url, name) {
-            const container = document.getElementById('player-wrapper');
-            container.style.display = 'block';
-            if (player) player.destroy();
-            container.innerHTML = "";
-            player = new Clappr.Player({ source: url, parentId: "#player-wrapper", width: '100%', height: '100%', autoPlay: true });
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        async function solicitarAcesso() {
-            const nome = document.getElementById('regName').value;
-            const pin = Math.floor(1000 + Math.random() * 9000);
-            const idGerado = nome.substring(0,3).toUpperCase() + pin;
-            await fetch(`${BASE_URL}/usuarios_premium/${pin}.json?auth=${API_KEY}`, { method: 'PUT', body: JSON.stringify({ nome, id: idGerado, channelName: nome }) });
-            alert("Seu ID: " + idGerado);
-        }
-
         async function logarPostagem() {
             const id = document.getElementById('idLogin').value;
-            const res = await fetch(`${BASE_URL}/usuarios_premium.json?auth=${API_KEY}`);
+            const res = await fetch(`${USER_URL}.json?auth=${API_KEY}`);
             const users = await res.json();
-            if(users) Object.keys(users).forEach(k => { 
-                if(users[k].id === id) {
-                    userLogado = { ...users[k], key: k };
+            if(users) {
+                const user = Object.values(users).find(u => u.id === id);
+                if(user) {
+                    userIDLogado = id;
                     document.getElementById('auth-card').style.display = 'none';
                     document.getElementById('post-area').style.display = 'block';
-                    document.getElementById('cName').value = userLogado.channelName || userLogado.nome;
-                }
-            });
-        }
-
-        async function salvarCanal() {
-            const name = document.getElementById('cName').value;
-            const photo = document.getElementById('cPhoto').value;
-            await fetch(`${BASE_URL}/usuarios_premium/${userLogado.key}.json?auth=${API_KEY}`, { method: 'PATCH', body: JSON.stringify({ channelName: name, channelPhoto: photo }) });
-            userLogado.channelName = name;
-            alert("Perfil Atualizado!");
+                    listarExclusao();
+                } else alert("ID INVÁLIDO");
+            }
         }
 
         async function postarFilmePublico() {
@@ -272,15 +229,48 @@
                 url: document.getElementById('pUrl').value, 
                 logo: document.getElementById('pLogo').value, 
                 group: 'Reve Filmes',
-                channelName: userLogado.channelName || userLogado.nome
+                owner: userIDLogado 
             };
-            await fetch(`${BASE_URL}/youtube.json?auth=${API_KEY}`, { method: 'POST', body: JSON.stringify(data) });
-            alert("Postado!"); loadCloud();
+            await fetch(`${YT_URL}.json?auth=${API_KEY}`, { method: 'POST', body: JSON.stringify(data) });
+            loadCloud();
         }
 
-        function switchTab(cat) { currentCategory = cat; document.getElementById('auth-panel').style.display = (cat === 'auth') ? 'block' : 'none'; renderChannels(); }
-        function acessoSeguro() { if(prompt("PIN:") === ID_ACESSO) document.getElementById('private-panel').style.display='block'; }
+        function listarExclusao() {
+            const box = document.getElementById('meus-posts-lista');
+            box.innerHTML = '<p style="font-size:10px; color:orange">GERENCIAR MEUS POSTS:</p>';
+            ytChannels.filter(c => c.owner === userIDLogado).forEach(m => {
+                box.innerHTML += `<div class="yt-manager-item"><span>${m.name}</span><span style="color:red;cursor:pointer" onclick="removerPost('${m.id}')">EXCLUIR</span></div>`;
+            });
+        }
+
+        async function removerPost(id) {
+            if(confirm("Excluir definitivamente?")) {
+                await fetch(`${YT_URL}/${id}.json?auth=${API_KEY}`, { method: 'DELETE' });
+                loadCloud();
+            }
+        }
+
+        function switchTab(cat) { 
+            currentCategory = cat; 
+            document.getElementById('genre-popup').style.display = 'none';
+            document.getElementById('auth-panel').style.display = (cat === 'auth') ? 'block' : 'none';
+            document.getElementById('private-panel').style.display = (cat === 'privado') ? 'block' : 'none';
+            document.getElementById('channelDisplay').style.display = (['auth', 'privado'].includes(cat)) ? 'none' : 'grid';
+            renderChannels();
+        }
+
+        function iniciarPlayer(url, name) {
+            const wrap = document.getElementById('player-wrapper');
+            wrap.style.display = 'block';
+            if (player) player.destroy();
+            player = new Clappr.Player({ source: url, parentId: "#player-wrapper", width: '100%', height: '100%', autoPlay: true });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         function togglePopup() { const p = document.getElementById('genre-popup'); p.style.display = (p.style.display === 'block') ? 'none' : 'block'; }
+        function acessoSeguro() { if (prompt("PIN:") === "netchaveapi") switchTab('privado'); }
+        function comandoAtalho() { switchTab('Vidyou tv Aberta'); }
+
         window.onload = loadCloud;
     </script>
 </body>
