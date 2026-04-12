@@ -75,6 +75,50 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); 
         }
 
+        /* --- NOVO: CSS PARA CANAIS EM TELA CHEIA --- */
+        #fullscreen-carousel {
+            display: none;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 0;
+            overflow-x: auto;
+            white-space: nowrap;
+            z-index: 2147483647;
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s ease;
+        }
+        #fullscreen-carousel::-webkit-scrollbar { height: 4px; }
+        #fullscreen-carousel::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+
+        .fs-item {
+            display: inline-block;
+            width: 80px;
+            text-align: center;
+            margin: 0 8px;
+            cursor: pointer;
+            vertical-align: top;
+        }
+        .fs-item img {
+            width: 45px;
+            height: 45px;
+            object-fit: contain;
+            border-radius: 6px;
+            background: #000;
+            border: 1px solid #333;
+        }
+        .fs-item p {
+            font-size: 8px;
+            margin: 4px 0 0;
+            color: #ccc;
+            white-space: normal;
+            line-height: 1;
+        }
+        /* ------------------------------------------- */
+
         .video-interactions {
             display: none; width: 100%; margin-bottom: 20px; background: #111; padding: 10px; border-radius: 0 0 12px 12px; border: 1px solid #222;
         }
@@ -148,7 +192,9 @@
     <div class="container">
         <div id="status-msg">Sincronizando Grade...</div>
         
-        <div id="player-wrapper"></div>
+        <div id="player-wrapper">
+            <div id="fullscreen-carousel"></div>
+        </div>
         <div id="twitch-container"></div>
 
         <div class="video-interactions" id="videoInteractions">
@@ -246,8 +292,62 @@
             if(el.style.display === 'block') {
                 if (el.requestFullscreen) el.requestFullscreen();
                 else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+                renderFullscreenCarousel(); // Atualiza dados ao entrar
             } else { alert("Dê play em um canal primeiro!"); }
         }
+
+        // --- NOVO: LÓGICA DO CARROSSEL EM TELA CHEIA ---
+        function renderFullscreenCarousel() {
+            const box = document.getElementById('fullscreen-carousel');
+            box.innerHTML = '';
+            const searchTag = currentCategory.toLowerCase().trim();
+
+            let list = [];
+            if(currentAuthorView) {
+                list = ytChannels.filter(c => c.owner === currentAuthorView);
+            } else {
+                list = (['live youtube', 'filmes'].includes(searchTag)) 
+                    ? ytChannels.filter(c => c.group.toLowerCase().trim() === searchTag) 
+                    : allChannels.filter(c => c.group.toLowerCase().includes(searchTag));
+            }
+
+            list.forEach(c => {
+                const item = document.createElement('div');
+                item.className = 'fs-item';
+                item.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    iniciarPlayer(c.url, c.name, c.owner); 
+                    box.style.display = 'none'; 
+                };
+                item.innerHTML = `<img src="${c.logo || 'https://via.placeholder.com/70'}"><p>${c.name}</p>`;
+                box.appendChild(item);
+            });
+        }
+
+        // Listener para clique no player (Mostrar/Ocultar carrossel em Fullscreen)
+        document.getElementById('player-wrapper').addEventListener('click', function() {
+            const isFS = document.fullscreenElement || document.webkitFullscreenElement;
+            if (isFS) {
+                const box = document.getElementById('fullscreen-carousel');
+                if (box.style.display === 'block') {
+                    box.style.display = 'none';
+                } else {
+                    renderFullscreenCarousel();
+                    box.style.display = 'block';
+                    // Oculta automaticamente após 6 segundos se não houver clique
+                    setTimeout(() => { if(box.style.display === 'block') box.style.display = 'none'; }, 6000);
+                }
+            }
+        });
+
+        // Garantir que suma ao sair do modo tela cheia
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) document.getElementById('fullscreen-carousel').style.display = 'none';
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            if (!document.webkitFullscreenElement) document.getElementById('fullscreen-carousel').style.display = 'none';
+        });
+        // ----------------------------------------------
 
         async function carregarInteracoes(id, ownerId) {
             videoIdAtual = id;
@@ -413,7 +513,7 @@
                 }
                 renderChannels();
                 renderFollowedSection();
-                listarYtAdm(); // Atualiza lista do painel privado
+                listarYtAdm(); 
                 if(userLogado) listarMeusPosts();
             } catch(e) { console.log(e); }
         }
@@ -488,7 +588,9 @@
             document.getElementById('status-msg').innerText = "ASSISTINDO: " + name;
 
             if (player) player.destroy();
-            container.innerHTML = "";
+            // Limpa o conteúdo mas preserva o carrossel
+            const carouselHTML = document.getElementById('fullscreen-carousel').outerHTML;
+            container.innerHTML = carouselHTML;
 
             document.getElementById('shareBtn').onclick = () => {
                 const text = `Estou assistindo ${name} no API TV! Acesse agora: ${window.location.href}`;
@@ -500,7 +602,11 @@
                 if(url.includes('v=')) vid = url.split('v=')[1].split('&')[0];
                 else if(url.includes('live/')) vid = url.split('live/')[1].split('?')[0];
                 else vid = url.split('/').pop().split('?')[0];
-                container.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${vid}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+                const iframe = document.createElement('iframe');
+                iframe.width = "100%"; iframe.height = "100%";
+                iframe.src = `https://www.youtube.com/embed/${vid}?autoplay=1`;
+                iframe.frameBorder = "0"; iframe.allow = "autoplay; encrypted-media"; iframe.allowFullscreen = true;
+                container.appendChild(iframe);
             } else {
                 let isDirect = url.toLowerCase().includes(".mp4") || url.toLowerCase().includes(".mkv") || url.includes("google");
                 player = new Clappr.Player({ 
